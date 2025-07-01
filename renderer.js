@@ -625,6 +625,46 @@ async function displayAISuggestions(moodEntry, selectedMood, noteText) {
         
         if (result.success) {
             console.log('Mood entry saved successfully to Firestore');
+            
+            // Call LangGraph flow for additional analysis
+            console.log('🚀 Calling LangGraph flow for additional insights...');
+            try {
+                const langGraphResult = await ipcRenderer.invoke('analyze-mood-with-langgraph', moodEntryObject);
+                
+                if (langGraphResult.success) {
+                    console.log('✅ LangGraph Analysis Success:', {
+                        insight: langGraphResult.insight,
+                        analysis: langGraphResult.analysis
+                    });
+                    
+                    // Add LangGraph insight to the suggestions display
+                    suggestionContent.innerHTML += `
+                        <div style="margin-top: 16px; padding: 12px; background: rgba(34, 197, 94, 0.1); border-radius: 8px; color: #86efac;">
+                            <strong>🤖 AI Coach Insight:</strong><br/>
+                            ${langGraphResult.insight}
+                        </div>
+                    `;
+                } else {
+                    console.log('⚠️ LangGraph Analysis (Fallback):', langGraphResult.insight);
+                    
+                    // Show fallback insight
+                    suggestionContent.innerHTML += `
+                        <div style="margin-top: 16px; padding: 12px; background: rgba(34, 197, 94, 0.1); border-radius: 8px; color: #86efac;">
+                            <strong>💡 Motivational Insight:</strong><br/>
+                            ${langGraphResult.insight}
+                        </div>
+                    `;
+                }
+            } catch (langGraphError) {
+                console.error('❌ LangGraph flow error:', langGraphError);
+                // Show generic motivational message on error
+                suggestionContent.innerHTML += `
+                    <div style="margin-top: 16px; padding: 12px; background: rgba(34, 197, 94, 0.1); border-radius: 8px; color: #86efac;">
+                        <strong>💡 Motivational Insight:</strong><br/>
+                        ✨ Every emotion you feel is valid and temporary. Take a deep breath, and remember that you're stronger than you know.
+                    </div>
+                `;
+            }
         } else {
             console.error('Failed to save mood entry:', result.error);
             // Show user-friendly error message

@@ -7,6 +7,7 @@ import {
   getMoodHistoryFromFirestore,
   isFirebaseConnected 
 } from './firebaseClient.js';
+import { runMoodAnalysisFlow } from './langgraphFlow.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -208,6 +209,26 @@ ipcMain.handle('reset-onboarding', async () => {
   } catch (error) {
     console.error('❌ Error resetting onboarding:', error);
     return { success: false, error: error.message };
+  }
+});
+
+// Handle LangGraph mood analysis
+ipcMain.handle('analyze-mood-with-langgraph', async (event, moodEntry) => {
+  console.log('analyze-mood-with-langgraph handler called');
+  
+  try {
+    const result = await runMoodAnalysisFlow(moodEntry);
+    console.log('✅ LangGraph analysis completed:', result.success ? 'success' : 'failed');
+    
+    return result;
+  } catch (error) {
+    console.error('❌ Error running LangGraph analysis:', error);
+    return {
+      success: false,
+      insight: "✨ Every emotion you feel is valid and temporary. Take a deep breath, and remember that you're stronger than you know.",
+      analysis: "LangGraph analysis failed",
+      error: error.message
+    };
   }
 });
 

@@ -16,6 +16,15 @@ A beautiful, modern Electron-based mood tracking application with AI-powered sug
 - Get AI-powered suggestions based on your current emotional state
 - Receive curated music recommendations for each mood
 
+### 🤖 LangGraph AI Integration
+- **Advanced Mood Analysis**: Powered by OpenAI GPT-4 through LangGraph workflows
+- **Personalized Insights**: AI analyzes your mood and provides tailored motivational guidance
+- **Two-Stage Processing**: 
+  1. Emotional analysis to understand underlying feelings
+  2. Personalized insight generation with actionable suggestions
+- **Fallback Support**: Works with encouraging default messages when API key is not configured
+- **Privacy-First**: Your mood data is only sent to OpenAI when you have an API key configured
+
 ### 📖 Mood History
 - View all your previous mood entries with timestamps
 - See AI suggestions and music recommendations from past entries
@@ -39,12 +48,21 @@ A beautiful, modern Electron-based mood tracking application with AI-powered sug
    npm install
    ```
 
-2. **Run the Application**
+2. **Set Up AI Features (Optional)**
+   - Create a `.env` file in the root directory
+   - Add your OpenAI API key:
+     ```
+     OPENAI_API_KEY=your_openai_api_key_here
+     ```
+   - Get your API key from: https://platform.openai.com/api-keys
+   - **Note**: AI features work with fallback insights if no API key is provided
+
+3. **Run the Application**
    ```bash
    npm start
    ```
 
-3. **First Launch**
+4. **First Launch**
    - The app opens with a welcoming home screen
    - Click "Get Started" to enter the main application
    - Your mood entries are automatically saved locally
@@ -77,6 +95,9 @@ A beautiful, modern Electron-based mood tracking application with AI-powered sug
 - **HTML/CSS/JavaScript**: Modern web technologies
 - **Chart.js**: Interactive mood trend visualizations
 - **Node.js**: Backend functionality for file operations
+- **LangGraph**: AI workflow orchestration for mood analysis
+- **OpenAI GPT-4**: Advanced natural language processing for personalized insights
+- **LangChain**: AI application framework for building the mood analysis pipeline
 
 ## 📱 Navigation Flow
 

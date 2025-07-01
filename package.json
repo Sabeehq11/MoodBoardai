@@ -19,6 +19,9 @@
     "electron": "^37.1.0"
   },
   "dependencies": {
+    "@langchain/core": "^0.3.61",
+    "@langchain/langgraph": "^0.3.6",
+    "@langchain/openai": "^0.5.16",
     "dotenv": "^17.0.0",
     "express": "^5.1.0",
     "firebase-admin": "^13.4.0"
