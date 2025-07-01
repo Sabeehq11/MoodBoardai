@@ -1,0 +1,24 @@
+{
+  "name": "moodboard-ai",
+  "version": "1.0.0",
+  "description": "A cross-platform desktop application for tracking emotions and receiving AI-powered mood suggestions",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [
+    "electron",
+    "mood",
+    "ai",
+    "emotional-tracking"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^37.1.0"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}

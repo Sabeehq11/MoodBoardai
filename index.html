@@ -1,0 +1,2481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoodBoard AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #ff6b9d 0%, #ff8e8e 25%, #ffa8a8 50%, #87ceeb 75%, #4ecdc4 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            background-attachment: fixed;
+            color: #2a2a2a;
+            overflow-x: hidden;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 24px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .container {
+            background: linear-gradient(145deg, rgba(30, 31, 41, 0.95) 0%, rgba(42, 43, 56, 0.98) 100%);
+            backdrop-filter: blur(20px);
+            border-radius: 32px;
+            padding: 40px;
+            box-shadow: 
+                0 32px 64px rgba(255, 107, 157, 0.15), 
+                0 16px 32px rgba(135, 206, 235, 0.1),
+                0 8px 16px rgba(0, 0, 0, 0.25);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #ff6b9d, #ff8e8e, #4ecdc4, #87ceeb);
+            border-radius: 32px 32px 0 0;
+        }
+        
+        h1 {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #ff6b9d, #ff8e8e, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+            margin-bottom: 36px;
+            font-size: 2.8em;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            text-shadow: 0 4px 8px rgba(255, 107, 157, 0.2);
+        }
+        
+        h2 {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            font-size: 1.9em;
+            color: #f1f5f9;
+            margin-bottom: 28px;
+        }
+        
+        h3 {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            font-size: 1.2em;
+            color: #e2e8f0;
+            margin-bottom: 18px;
+        }
+        
+        /* Sidebar Navigation Styles */
+        .app-layout {
+            display: flex;
+            min-height: 100vh;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+            gap: 24px;
+            opacity: 0;
+            transition: opacity 0.4s ease-in-out;
+        }
+
+        .sidebar {
+            width: 280px;
+            height: fit-content;
+            max-height: calc(100vh - 48px);
+            background: linear-gradient(145deg, rgba(30, 31, 41, 0.95) 0%, rgba(42, 43, 56, 0.98) 100%);
+            backdrop-filter: blur(20px);
+            border-radius: 32px;
+            padding: 32px 20px;
+            box-shadow: 
+                0 32px 64px rgba(255, 107, 157, 0.15), 
+                0 16px 32px rgba(135, 206, 235, 0.1),
+                0 8px 16px rgba(0, 0, 0, 0.25);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 24px;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            flex-shrink: 0;
+        }
+
+        .sidebar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #ff6b9d, #ff8e8e, #4ecdc4, #87ceeb);
+            border-radius: 32px 32px 0 0;
+        }
+
+        .sidebar-header {
+            text-align: center;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 2px solid rgba(255, 107, 157, 0.1);
+        }
+
+        .sidebar-logo {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.5em;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ff6b9d, #ff8e8e, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .sidebar-subtitle {
+            font-size: 12px;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .sidebar-nav {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .nav-item {
+            margin-bottom: 8px;
+        }
+
+        .nav-button {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 20px;
+            background: transparent;
+            color: #94a3b8;
+            border: none;
+            border-radius: 18px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 15px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            text-align: left;
+        }
+
+        .nav-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #ff6b9d, #ff8e8e, #4ecdc4);
+            opacity: 0;
+            transition: all 0.4s ease;
+            border-radius: 18px;
+        }
+
+        .nav-button.active {
+            color: white;
+            font-weight: 600;
+            transform: translateX(4px);
+            box-shadow: 0 8px 20px rgba(255, 107, 157, 0.3);
+        }
+
+        .nav-button.active::before {
+            opacity: 1;
+        }
+
+        .nav-button:hover:not(.active) {
+            background: linear-gradient(135deg, rgba(255, 107, 157, 0.08), rgba(78, 205, 196, 0.08));
+            color: #cbd5e1;
+            transform: translateX(2px);
+            box-shadow: 0 4px 12px rgba(255, 107, 157, 0.15);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            position: relative;
+            z-index: 1;
+            flex-shrink: 0;
+        }
+
+        .nav-label {
+            position: relative;
+            z-index: 1;
+            font-weight: inherit;
+        }
+
+        /* Hamburger menu for mobile */
+        .hamburger-menu {
+            display: none;
+            position: fixed;
+            top: 24px;
+            left: 24px;
+            z-index: 1000;
+            background: linear-gradient(135deg, #ff6b9d, #ff8e8e, #4ecdc4);
+            border: none;
+            border-radius: 12px;
+            padding: 12px;
+            cursor: pointer;
+            box-shadow: 0 8px 16px rgba(255, 107, 157, 0.25);
+            transition: all 0.3s ease;
+        }
+
+        .hamburger-menu:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 24px rgba(255, 107, 157, 0.35);
+        }
+
+        .hamburger-icon {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .hamburger-line {
+            width: 20px;
+            height: 2px;
+            background: white;
+            border-radius: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .hamburger-menu.active .hamburger-line:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+
+        .hamburger-menu.active .hamburger-line:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger-menu.active .hamburger-line:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -6px);
+        }
+
+        /* Main content area */
+        .main-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .content-container {
+            background: linear-gradient(145deg, rgba(30, 31, 41, 0.95) 0%, rgba(42, 43, 56, 0.98) 100%);
+            backdrop-filter: blur(20px);
+            border-radius: 32px;
+            padding: 40px;
+            box-shadow: 
+                0 32px 64px rgba(255, 107, 157, 0.15), 
+                0 16px 32px rgba(135, 206, 235, 0.1),
+                0 8px 16px rgba(0, 0, 0, 0.25);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+            min-height: 600px;
+        }
+
+        .content-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #ff6b9d, #ff8e8e, #4ecdc4, #87ceeb);
+            border-radius: 32px 32px 0 0;
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .app-layout {
+                flex-direction: column;
+                padding: 16px;
+                gap: 16px;
+            }
+
+            .hamburger-menu {
+                display: block;
+            }
+
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                width: 280px;
+                transform: translateX(-100%);
+                z-index: 999;
+                border-radius: 0 32px 32px 0;
+                padding: 80px 20px 32px;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 998;
+                opacity: 0;
+                visibility: hidden;
+                transition: all 0.3s ease;
+            }
+
+            .sidebar-overlay.show {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            .main-content {
+                margin-top: 60px;
+            }
+
+            .content-container {
+                padding: 24px;
+            }
+        }
+
+                 /* Legacy tab navigation - keep hidden for compatibility */
+         .tab-navigation {
+             display: none;
+         }
+         
+         .tab-button {
+            flex: 1;
+            padding: 16px 20px;
+            background: transparent;
+            color: #64748b;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .tab-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #ff6b9d, #ff8e8e, #4ecdc4);
+            opacity: 0;
+            transition: all 0.4s ease;
+            border-radius: 14px;
+        }
+        
+        .tab-button.active {
+            color: white;
+            font-weight: 600;
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 8px 20px rgba(255, 107, 157, 0.3);
+        }
+        
+        .tab-button.active::before {
+            opacity: 1;
+        }
+        
+        .tab-button:hover:not(.active) {
+            background: linear-gradient(135deg, rgba(255, 107, 157, 0.1), rgba(78, 205, 196, 0.1));
+            color: #475569;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 107, 157, 0.15);
+        }
+        
+        .tab-button span {
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Card-style sections */
+        .card {
+            background: linear-gradient(145deg, rgba(30, 31, 41, 0.9) 0%, rgba(42, 43, 56, 0.95) 100%);
+            border-radius: 24px;
+            padding: 32px;
+            margin-bottom: 28px;
+            box-shadow: 
+                0 16px 32px rgba(255, 107, 157, 0.08), 
+                0 8px 16px rgba(135, 206, 235, 0.06),
+                0 4px 8px rgba(0, 0, 0, 0.15);
+            border: 1.5px solid rgba(255, 255, 255, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #ff6b9d, #4ecdc4);
+            opacity: 0.7;
+        }
+        
+        .form-group {
+            margin-bottom: 28px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 12px;
+            font-weight: 600;
+            color: #e2e8f0;
+            font-size: 15px;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        select, textarea, input[type="text"], input[type="email"] {
+            width: 100%;
+            padding: 18px 24px;
+            border: 2px solid rgba(255, 107, 157, 0.2);
+            border-radius: 16px;
+            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(145deg, rgba(42, 43, 56, 0.9), rgba(51, 54, 73, 0.95));
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            color: #e2e8f0;
+            box-shadow: 0 4px 8px rgba(255, 107, 157, 0.06);
+        }
+        
+        select:focus, textarea:focus, input:focus {
+            outline: none;
+            border-color: #ff6b9d;
+            background: linear-gradient(145deg, rgba(51, 54, 73, 0.98), rgba(58, 62, 83, 0.95));
+            box-shadow: 
+                0 0 0 4px rgba(255, 107, 157, 0.12),
+                0 8px 16px rgba(255, 107, 157, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 110px;
+            line-height: 1.7;
+        }
+        
+        /* Modern button styles */
+        button {
+            background: linear-gradient(135deg, #ff6b9d 0%, #ff8e8e 50%, #4ecdc4 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            border-radius: 16px;
+            padding: 18px 36px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            text-transform: none;
+            letter-spacing: 0.02em;
+            font-family: 'Poppins', sans-serif;
+            box-shadow: 0 8px 16px rgba(255, 107, 157, 0.25);
+        }
+        
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #ff5a8a 0%, #ff7a7a 50%, #3dbdb4 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        
+        button:hover::before {
+            opacity: 1;
+        }
+        
+        button:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 
+                0 16px 32px rgba(255, 107, 157, 0.35),
+                0 8px 16px rgba(78, 205, 196, 0.2);
+        }
+        
+        button:active {
+            transform: translateY(-1px) scale(0.98);
+        }
+        
+        button span {
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Suggestions card */
+        #suggestions {
+            display: none;
+            margin-top: 28px;
+        }
+        
+        #suggestions.show {
+            display: block;
+        }
+        
+        #suggestions h3 {
+            color: #e2e8f0;
+            margin-bottom: 18px;
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+        
+        .suggestion-text {
+            color: #cbd5e1;
+            line-height: 1.8;
+            font-size: 15px;
+        }
+        
+        /* History view styles */
+        .history-entry {
+            background: linear-gradient(145deg, rgba(30, 31, 41, 0.95) 0%, rgba(42, 43, 56, 0.98) 100%);
+            border-radius: 20px;
+            padding: 28px;
+            margin-bottom: 20px;
+            box-shadow: 
+                0 12px 24px rgba(255, 107, 157, 0.08), 
+                0 6px 12px rgba(135, 206, 235, 0.06);
+            border-left: 5px solid #ff6b9d;
+            border: 1.5px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .history-entry::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+        }
+        
+        .history-entry:hover {
+            transform: translateY(-4px) scale(1.01);
+            box-shadow: 
+                0 20px 40px rgba(255, 107, 157, 0.15),
+                0 10px 20px rgba(78, 205, 196, 0.1);
+        }
+        
+        .history-mood {
+            font-size: 1.4em;
+            font-weight: 700;
+            margin-bottom: 14px;
+            color: #f1f5f9;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .history-note {
+            color: #94a3b8;
+            margin-bottom: 18px;
+            font-style: italic;
+            line-height: 1.7;
+        }
+        
+        .history-suggestion {
+            background: linear-gradient(135deg, rgba(255, 107, 157, 0.05) 0%, rgba(78, 205, 196, 0.05) 100%);
+            padding: 18px;
+            border-radius: 14px;
+            margin-bottom: 14px;
+            border-left: 3px solid #ff6b9d;
+            box-shadow: 0 2px 8px rgba(255, 107, 157, 0.08);
+            color: #cbd5e1;
+        }
+        
+        .history-music {
+            margin-bottom: 14px;
+            color: #cbd5e1;
+        }
+        
+        .history-music a {
+            color: #ff6b9d;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .history-music a:hover {
+            color: #4ecdc4;
+            text-decoration: underline;
+        }
+        
+        .history-timestamp {
+            font-size: 13px;
+            color: #64748b;
+            text-align: right;
+            font-weight: 500;
+        }
+        
+        .no-history {
+            text-align: center;
+            color: #94a3b8;
+            font-style: italic;
+            padding: 56px;
+            font-size: 16px;
+        }
+
+        /* Insights styles */
+        #insightsContent {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .insight-card {
+            background: linear-gradient(145deg, rgba(30, 31, 41, 0.95) 0%, rgba(42, 43, 56, 0.98) 100%);
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: 
+                0 16px 32px rgba(255, 107, 157, 0.08), 
+                0 8px 16px rgba(135, 206, 235, 0.06),
+                0 4px 8px rgba(0, 0, 0, 0.15);
+            border: 1.5px solid rgba(255, 255, 255, 0.15);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        .insight-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #ff6b9d, #4ecdc4);
+            opacity: 0.8;
+        }
+
+        .insight-card:hover {
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 
+                0 24px 48px rgba(255, 107, 157, 0.15),
+                0 12px 24px rgba(78, 205, 196, 0.1);
+        }
+
+        .insight-card.full-width {
+            grid-column: 1 / -1;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .insight-icon {
+            font-size: 3em;
+            line-height: 1;
+            opacity: 0.9;
+            background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 2px 4px rgba(255, 107, 157, 0.2);
+        }
+
+        .insight-content {
+            flex: 1;
+        }
+
+        .insight-content h3 {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            font-size: 1.3em;
+            color: #f1f5f9;
+            margin: 0 0 16px 0;
+            line-height: 1.3;
+        }
+
+        .insight-value {
+            font-family: 'Poppins', sans-serif;
+            font-size: 2.2em;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+            line-height: 1.2;
+        }
+
+        .insight-description {
+            color: #94a3b8;
+            font-size: 0.95em;
+            line-height: 1.6;
+            font-weight: 500;
+        }
+
+        .chart-container-small {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+
+        .insight-positive {
+            color: #22c55e !important;
+        }
+
+        .insight-negative {
+            color: #ef4444 !important;
+        }
+
+        .insight-neutral {
+            color: #94a3b8 !important;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .streak-fire {
+            animation: flicker 2s infinite alternate;
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        /* Achievements styles */
+        .achievement-section {
+            margin-bottom: 40px;
+        }
+
+        .achievement-section h3 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-bottom: 24px;
+            text-align: center;
+            background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Streak Display */
+        .streak-display {
+            background: linear-gradient(145deg, rgba(30, 31, 41, 0.95) 0%, rgba(42, 43, 56, 0.98) 100%);
+            border-radius: 32px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 
+                0 20px 40px rgba(255, 107, 157, 0.15),
+                0 8px 16px rgba(135, 206, 235, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 32px;
+        }
+
+        .streak-display::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #ff6b9d, #ffd700, #4ecdc4);
+            animation: shimmer 2s infinite;
+        }
+
+        .streak-flame-container {
+            margin-bottom: 20px;
+        }
+
+        .streak-flame {
+            font-size: 4em;
+            display: inline-block;
+            animation: flame-dance 2s ease-in-out infinite alternate;
+            filter: drop-shadow(0 0 20px rgba(255, 69, 0, 0.5));
+        }
+
+        .streak-number {
+            font-family: 'Poppins', sans-serif;
+            font-size: 3.5em;
+            font-weight: 900;
+            background: linear-gradient(135deg, #ff6b9d, #ffd700, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .streak-label {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #f1f5f9;
+            margin-bottom: 12px;
+        }
+
+        .streak-description {
+            color: #94a3b8;
+            font-size: 1.1em;
+            font-weight: 500;
+        }
+
+        /* Badges Grid */
+        .badges-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .badge-card {
+            background: linear-gradient(145deg, rgba(30, 31, 41, 0.9) 0%, rgba(42, 43, 56, 0.95) 100%);
+            border-radius: 20px;
+            padding: 28px;
+            text-align: center;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .badge-card.unlocked {
+            background: linear-gradient(145deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 255, 255, 0.95) 100%);
+            border-color: #ffd700;
+            box-shadow: 
+                0 0 30px rgba(255, 215, 0, 0.3),
+                0 8px 16px rgba(0, 0, 0, 0.1);
+            animation: glow-pulse 3s ease-in-out infinite;
+        }
+
+        .badge-card.locked {
+            opacity: 0.5;
+            filter: grayscale(0.7);
+        }
+
+        .badge-card:hover {
+            transform: translateY(-8px) scale(1.05);
+        }
+
+        .badge-card.unlocked:hover {
+            transform: translateY(-8px) scale(1.05);
+            box-shadow: 
+                0 0 40px rgba(255, 215, 0, 0.5),
+                0 16px 32px rgba(0, 0, 0, 0.25);
+        }
+
+        .badge-icon {
+            font-size: 3em;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .badge-card.unlocked .badge-icon {
+            animation: badge-shine 2s ease-in-out infinite;
+        }
+
+        .badge-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-bottom: 8px;
+        }
+
+        .badge-description {
+            color: #94a3b8;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        .badge-card.unlocked .badge-title {
+            background: linear-gradient(135deg, #ff6b9d, #ffd700, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Goals Container */
+        .goals-container {
+            display: grid;
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .goal-card {
+            background: linear-gradient(145deg, rgba(30, 31, 41, 0.9) 0%, rgba(42, 43, 56, 0.95) 100%);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .goal-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        .goal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .goal-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        .goal-progress-text {
+            font-size: 0.9em;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b9d, #4ecdc4);
+            border-radius: 20px;
+            transition: width 0.8s ease;
+            animation: progress-shimmer 2s infinite;
+        }
+
+        .goal-reward {
+            font-size: 0.85em;
+            color: #ffd700;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: linear-gradient(145deg, rgba(30, 31, 41, 0.9) 0%, rgba(42, 43, 56, 0.95) 100%);
+            border-radius: 20px;
+            padding: 24px;
+            text-align: center;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-icon {
+            font-size: 2.5em;
+            margin-bottom: 12px;
+        }
+
+        .stat-value {
+            font-family: 'Poppins', sans-serif;
+            font-size: 2.2em;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            color: #94a3b8;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        /* Confetti System */
+        .confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .confetti-piece {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            opacity: 0.9;
+            animation: confetti-fall linear;
+        }
+
+        /* Animations */
+        @keyframes flame-dance {
+            0% { transform: rotate(-5deg) scale(1); }
+            100% { transform: rotate(5deg) scale(1.1); }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -100% 0; }
+            100% { background-position: 100% 0; }
+        }
+
+        @keyframes glow-pulse {
+            0%, 100% { 
+                box-shadow: 
+                    0 0 20px rgba(255, 215, 0, 0.3),
+                    0 8px 16px rgba(0, 0, 0, 0.1);
+            }
+            50% { 
+                box-shadow: 
+                    0 0 40px rgba(255, 215, 0, 0.6),
+                    0 8px 16px rgba(0, 0, 0, 0.1);
+            }
+        }
+
+        @keyframes badge-shine {
+            0%, 100% { filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.3)); }
+            50% { filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.8)); }
+        }
+
+        @keyframes progress-shimmer {
+            0% { background-position: -200px 0; }
+            100% { background-position: calc(200px + 100%) 0; }
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        .celebration-text {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Poppins', sans-serif;
+            font-size: 2.5em;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ff6b9d, #ffd700, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            z-index: 1001;
+            animation: celebration-bounce 2s ease-out;
+            pointer-events: none;
+        }
+
+        @keyframes celebration-bounce {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+        }
+
+        /* Trends view styles */
+        #trendsView h2 {
+            color: #f1f5f9;
+            text-align: center;
+            margin-bottom: 28px;
+            font-size: 2em;
+            font-weight: 700;
+        }
+
+        #chartContainer {
+            background: linear-gradient(145deg, rgba(30, 31, 41, 0.95) 0%, rgba(42, 43, 56, 0.98) 100%);
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 
+                0 16px 32px rgba(255, 107, 157, 0.08),
+                0 8px 16px rgba(78, 205, 196, 0.06);
+            border: 1.5px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .no-trends {
+            text-align: center;
+            color: #94a3b8;
+            font-style: italic;
+            padding: 56px;
+            font-size: 16px;
+        }
+
+        /* Settings view styles */
+        #settingsView h2 {
+            color: #f1f5f9;
+            text-align: center;
+            margin-bottom: 28px;
+            font-size: 2em;
+            font-weight: 700;
+        }
+
+        .settings-form {
+            /* Using the card class styling */
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 16px;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: linear-gradient(145deg, rgba(42, 43, 56, 0.9), rgba(51, 54, 73, 0.95));
+            padding: 16px 20px;
+            border-radius: 14px;
+            border: 2px solid rgba(255, 107, 157, 0.15);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 8px rgba(255, 107, 157, 0.06);
+            flex: 1;
+            min-width: 140px;
+        }
+        
+        .radio-option:hover {
+            background: linear-gradient(145deg, rgba(255, 107, 157, 0.08), rgba(78, 205, 196, 0.08));
+            border-color: rgba(255, 107, 157, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(255, 107, 157, 0.12);
+        }
+        
+        .radio-option input[type="radio"]:checked + label {
+            font-weight: 700;
+            color: #ff6b9d;
+        }
+
+        .radio-option input[type="radio"] {
+            width: auto;
+            margin: 0;
+            accent-color: #ff6b9d;
+            transform: scale(1.2);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-top: 14px;
+            background: linear-gradient(145deg, rgba(42, 43, 56, 0.9), rgba(51, 54, 73, 0.95));
+            padding: 20px;
+            border-radius: 14px;
+            border: 2px solid rgba(255, 107, 157, 0.15);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 8px rgba(255, 107, 157, 0.06);
+        }
+        
+        .checkbox-group:hover {
+            background: linear-gradient(145deg, rgba(255, 107, 157, 0.08), rgba(78, 205, 196, 0.08));
+            border-color: rgba(255, 107, 157, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(255, 107, 157, 0.12);
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+            accent-color: #ff6b9d;
+            transform: scale(1.2);
+        }
+
+        .settings-message {
+            margin-top: 24px;
+            padding: 20px;
+            border-radius: 16px;
+            text-align: center;
+            display: none;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .settings-message.success {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(74, 222, 128, 0.1) 100%);
+            border: 2px solid rgba(34, 197, 94, 0.2);
+            color: #059669;
+        }
+
+        .settings-message.error {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(248, 113, 113, 0.1) 100%);
+            border: 2px solid rgba(239, 68, 68, 0.2);
+            color: #dc2626;
+        }
+
+        .settings-message.info {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 197, 253, 0.1) 100%);
+            border: 2px solid rgba(59, 130, 246, 0.2);
+            color: #2563eb;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .app-container {
+                padding: 16px;
+            }
+            
+            .container {
+                padding: 28px;
+                border-radius: 24px;
+            }
+            
+            h1 {
+                font-size: 2.2em;
+            }
+            
+            h2 {
+                font-size: 1.6em;
+            }
+            
+            .tab-navigation {
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            
+            .tab-button {
+                padding: 14px 16px;
+                font-size: 13px;
+                min-width: calc(50% - 3px);
+            }
+            
+            .radio-group {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .radio-option {
+                min-width: auto;
+            }
+        }
+        
+        /* Enhanced animations and interactions */
+        * {
+            transition: color 0.3s ease, background-color 0.3s ease;
+        }
+        
+        /* Focus states for accessibility */
+        button:focus-visible,
+        select:focus-visible,
+        textarea:focus-visible,
+        input:focus-visible {
+            outline: 3px solid rgba(255, 107, 157, 0.4);
+            outline-offset: 2px;
+        }
+        
+        /* Subtle pulse animation for active states */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        
+        .tab-button.active {
+            animation: pulse 2s infinite;
+        }
+        
+        /* Loading and interaction feedback */
+        .card:hover {
+            transform: translateY(-1px);
+            box-shadow: 
+                0 20px 40px rgba(255, 107, 157, 0.12), 
+                0 10px 20px rgba(135, 206, 235, 0.08),
+                0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Home Screen Styles */
+        #homeView {
+            text-align: center;
+            min-height: 70vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .home-title {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #ff6b9d, #ff8e8e, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 4.5em;
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            margin-bottom: 20px;
+            text-shadow: 0 8px 16px rgba(255, 107, 157, 0.3);
+            line-height: 1.1;
+        }
+
+        .home-subtitle {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.4em;
+            color: #64748b;
+            font-weight: 400;
+            margin-bottom: 40px;
+            max-width: 600px;
+            line-height: 1.6;
+        }
+
+        .welcome-message {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.8em;
+            font-weight: 600;
+            color: #f1f5f9;
+            margin-bottom: 30px;
+            opacity: 0;
+            animation: fadeInUp 1s ease 0.5s forwards;
+        }
+
+        .quote-container {
+            background: linear-gradient(145deg, rgba(30, 31, 41, 0.95) 0%, rgba(42, 43, 56, 0.98) 100%);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px;
+            margin: 40px 0;
+            max-width: 700px;
+            box-shadow: 
+                0 20px 40px rgba(255, 107, 157, 0.15), 
+                0 10px 20px rgba(135, 206, 235, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .quote-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #ff6b9d, #ff8e8e, #4ecdc4);
+            border-radius: 24px 24px 0 0;
+        }
+
+        .quote-text {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.3em;
+            font-weight: 500;
+            color: #f1f5f9;
+            font-style: italic;
+            line-height: 1.7;
+            margin-bottom: 20px;
+            opacity: 0;
+            animation: fadeInText 2s ease 1s forwards;
+        }
+
+        .quote-author {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.1em;
+            color: #cbd5e1;
+            font-weight: 600;
+            opacity: 0;
+            animation: fadeInText 2s ease 1.5s forwards;
+        }
+
+        .get-started-btn {
+            background: linear-gradient(135deg, #ff6b9d 0%, #ff8e8e 50%, #4ecdc4 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 1.3em;
+            border-radius: 20px;
+            padding: 20px 50px;
+            margin-top: 40px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            font-family: 'Poppins', sans-serif;
+            box-shadow: 0 12px 24px rgba(255, 107, 157, 0.3);
+            opacity: 0;
+            animation: fadeInUp 1s ease 2s forwards;
+        }
+
+        .get-started-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #ff5a8a 0%, #ff7a7a 50%, #3dbdb4 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .get-started-btn:hover::before {
+            opacity: 1;
+        }
+
+        .get-started-btn:hover {
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 
+                0 20px 40px rgba(255, 107, 157, 0.4),
+                0 10px 20px rgba(78, 205, 196, 0.25);
+        }
+
+        .get-started-btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInText {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Hide tab navigation initially */
+        .tab-navigation.hidden {
+            display: none;
+        }
+
+        /* Smooth transitions for main app elements */
+        #mainTitle {
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        #tabNavigation {
+            opacity: 0;
+            transition: opacity 0.5s ease 0.2s;
+        }
+
+        #moodEntryView {
+            opacity: 0;
+            transition: opacity 0.5s ease 0.4s;
+        }
+
+        #homeView {
+            transition: all 0.3s ease;
+        }
+
+        /* Mobile responsive for home screen */
+        @media (max-width: 768px) {
+            .home-title {
+                font-size: 3em;
+            }
+            
+            .home-subtitle {
+                font-size: 1.2em;
+                padding: 0 20px;
+            }
+            
+            .welcome-message {
+                font-size: 1.5em;
+                padding: 0 20px;
+            }
+            
+            .quote-container {
+                margin: 30px 20px;
+                padding: 30px;
+            }
+            
+            .quote-text {
+                font-size: 1.1em;
+            }
+            
+            .get-started-btn {
+                font-size: 1.1em;
+                padding: 18px 40px;
+            }
+        }
+
+        /* Onboarding Walkthrough Styles */
+        #onboardingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #ff6b9d 0%, #ff8e8e 25%, #ffa8a8 50%, #87ceeb 75%, #4ecdc4 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+
+        .onboarding-container {
+            background: linear-gradient(145deg, rgba(30, 31, 41, 0.95) 0%, rgba(42, 43, 56, 0.98) 100%);
+            backdrop-filter: blur(20px);
+            border-radius: 32px;
+            padding: 60px 50px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 
+                0 32px 64px rgba(255, 107, 157, 0.15), 
+                0 16px 32px rgba(135, 206, 235, 0.1),
+                0 8px 16px rgba(0, 0, 0, 0.25);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .onboarding-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #ff6b9d, #ff8e8e, #4ecdc4, #87ceeb);
+            border-radius: 32px 32px 0 0;
+        }
+
+        .onboarding-slides-container {
+            position: relative;
+            width: 100%;
+            min-height: 400px;
+            overflow: hidden;
+        }
+
+        .onboarding-slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            opacity: 0;
+            transform: translateX(30px);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+
+        .onboarding-slide.active {
+            position: relative;
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: auto;
+        }
+
+        .onboarding-slide.exit-left {
+            opacity: 0;
+            transform: translateX(-30px);
+        }
+
+        .onboarding-slide.enter-right {
+            opacity: 0;
+            transform: translateX(30px);
+        }
+
+        .onboarding-title {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #ff6b9d, #ff8e8e, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2.5em;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-bottom: 30px;
+            text-shadow: 0 4px 8px rgba(255, 107, 157, 0.2);
+            line-height: 1.2;
+        }
+
+        .onboarding-content {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.3em;
+            color: #e2e8f0;
+            line-height: 1.7;
+            margin-bottom: 50px;
+            font-weight: 400;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .onboarding-icon {
+            font-size: 4em;
+            margin-bottom: 30px;
+            display: block;
+            opacity: 0;
+            animation: iconFloat 1s ease 0.5s forwards;
+        }
+
+        @keyframes iconFloat {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .onboarding-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 40px;
+        }
+
+        .onboarding-dots {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex: 1;
+        }
+
+        .onboarding-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 107, 157, 0.3);
+            transition: all 0.4s ease;
+            cursor: pointer;
+        }
+
+        .onboarding-dot.active {
+            background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+            transform: scale(1.2);
+            box-shadow: 0 4px 8px rgba(255, 107, 157, 0.3);
+        }
+
+        .onboarding-btn {
+            background: linear-gradient(135deg, #ff6b9d 0%, #ff8e8e 50%, #4ecdc4 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1.1em;
+            border-radius: 16px;
+            padding: 16px 32px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            font-family: 'Poppins', sans-serif;
+            box-shadow: 0 8px 16px rgba(255, 107, 157, 0.25);
+            min-width: 120px;
+        }
+
+        .onboarding-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #ff5a8a 0%, #ff7a7a 50%, #3dbdb4 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .onboarding-btn:hover::before {
+            opacity: 1;
+        }
+
+        .onboarding-btn:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 
+                0 12px 24px rgba(255, 107, 157, 0.35),
+                0 6px 12px rgba(78, 205, 196, 0.2);
+        }
+
+        .onboarding-btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .onboarding-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .onboarding-btn:disabled:hover {
+            transform: none;
+            box-shadow: 0 8px 16px rgba(255, 107, 157, 0.25);
+        }
+
+        .onboarding-skip {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .onboarding-skip:hover {
+            background: rgba(255, 107, 157, 0.1);
+            color: #ff6b9d;
+        }
+
+        /* Mobile responsive for onboarding */
+        @media (max-width: 768px) {
+            .onboarding-container {
+                padding: 40px 30px;
+                margin: 20px;
+            }
+            
+            .onboarding-title {
+                font-size: 2em;
+            }
+            
+            .onboarding-content {
+                font-size: 1.1em;
+                margin-bottom: 40px;
+            }
+            
+            .onboarding-icon {
+                font-size: 3em;
+                margin-bottom: 20px;
+            }
+            
+            .onboarding-navigation {
+                flex-direction: column;
+                gap: 30px;
+            }
+            
+            .onboarding-dots {
+                order: 2;
+            }
+            
+            .onboarding-btn {
+                order: 1;
+                align-self: center;
+            }
+        }
+
+        /* Daily Reminder Modal Styles */
+        .reminder-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            z-index: 1500;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .reminder-modal-overlay.show {
+            opacity: 1;
+        }
+
+        .reminder-modal {
+            background: linear-gradient(145deg, rgba(30, 31, 41, 0.95) 0%, rgba(42, 43, 56, 0.98) 100%);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 
+                0 32px 64px rgba(255, 107, 157, 0.15), 
+                0 16px 32px rgba(135, 206, 235, 0.1),
+                0 8px 16px rgba(0, 0, 0, 0.25);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+            transform: scale(0.9) translateY(20px);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .reminder-modal-overlay.show .reminder-modal {
+            transform: scale(1) translateY(0);
+        }
+
+        .reminder-modal::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #ff6b9d, #ff8e8e, #4ecdc4, #87ceeb);
+            border-radius: 24px 24px 0 0;
+        }
+
+        .reminder-modal-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .reminder-icon {
+            font-size: 3.5em;
+            margin-bottom: 20px;
+            display: block;
+            animation: reminderBounce 0.6s ease 0.2s both;
+        }
+
+        @keyframes reminderBounce {
+            0% {
+                opacity: 0;
+                transform: scale(0.5) translateY(20px);
+            }
+            60% {
+                opacity: 1;
+                transform: scale(1.1) translateY(-5px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .reminder-title {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #ff6b9d, #ff8e8e, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 1.6em;
+            font-weight: 700;
+            margin-bottom: 16px;
+            line-height: 1.3;
+        }
+
+        .reminder-message {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.1em;
+            color: #cbd5e1;
+            line-height: 1.6;
+            margin-bottom: 32px;
+            font-weight: 400;
+        }
+
+        .reminder-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .reminder-btn {
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1em;
+            border-radius: 16px;
+            padding: 14px 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            font-family: 'Poppins', sans-serif;
+            min-width: 120px;
+        }
+
+        .reminder-btn-primary {
+            background: linear-gradient(135deg, #ff6b9d 0%, #ff8e8e 50%, #4ecdc4 100%);
+            color: white;
+            box-shadow: 0 8px 16px rgba(255, 107, 157, 0.25);
+        }
+
+        .reminder-btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #ff5a8a 0%, #ff7a7a 50%, #3dbdb4 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .reminder-btn-primary:hover::before {
+            opacity: 1;
+        }
+
+        .reminder-btn-primary:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 
+                0 12px 24px rgba(255, 107, 157, 0.35),
+                0 6px 12px rgba(78, 205, 196, 0.2);
+        }
+
+        .reminder-btn-secondary {
+            background: linear-gradient(135deg, rgba(100, 116, 139, 0.1), rgba(148, 163, 184, 0.15));
+            color: #94a3b8;
+            border: 1.5px solid rgba(100, 116, 139, 0.2);
+        }
+
+        .reminder-btn-secondary:hover {
+            background: linear-gradient(135deg, rgba(100, 116, 139, 0.15), rgba(148, 163, 184, 0.2));
+            color: #cbd5e1;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 12px rgba(100, 116, 139, 0.15);
+        }
+
+        .reminder-btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Mobile responsive for reminder modal */
+        @media (max-width: 480px) {
+            .reminder-modal {
+                padding: 32px 24px;
+                margin: 20px;
+            }
+            
+            .reminder-title {
+                font-size: 1.4em;
+            }
+            
+            .reminder-message {
+                font-size: 1em;
+                margin-bottom: 28px;
+            }
+            
+            .reminder-buttons {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .reminder-btn {
+                width: 100%;
+                padding: 16px 24px;
+            }
+        }
+
+
+    </style>
+</head>
+<body>
+    <!-- Onboarding Walkthrough Overlay -->
+    <div id="onboardingOverlay" style="display: none;">
+        <div class="onboarding-container">
+            <button class="onboarding-skip" id="skipOnboarding">Skip</button>
+            
+            <div class="onboarding-slides-container">
+                <!-- Slide 1: Welcome -->
+                <div class="onboarding-slide active" id="slide1">
+                    <div class="onboarding-icon">🎵</div>
+                    <h2 class="onboarding-title">Welcome to MoodBoard AI</h2>
+                    <p class="onboarding-content">
+                        Track your moods, get AI-powered suggestions, and view trends to understand yourself better.
+                    </p>
+                </div>
+                
+                <!-- Slide 2: Daily Tracking -->
+                <div class="onboarding-slide" id="slide2">
+                    <div class="onboarding-icon">📝</div>
+                    <h2 class="onboarding-title">Daily Mood Tracking</h2>
+                    <p class="onboarding-content">
+                        Log your emotions daily and receive matching music + personalized tips to improve your well-being.
+                    </p>
+                </div>
+                
+                <!-- Slide 3: Insights & History -->
+                <div class="onboarding-slide" id="slide3">
+                    <div class="onboarding-icon">📊</div>
+                    <h2 class="onboarding-title">Insights & Patterns</h2>
+                    <p class="onboarding-content">
+                        Explore your mood history, visualize patterns, and customize settings to make the app truly yours.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Navigation -->
+            <div class="onboarding-navigation">
+                <div></div> <!-- Spacer -->
+                
+                <div class="onboarding-dots">
+                    <div class="onboarding-dot active" data-slide="1"></div>
+                    <div class="onboarding-dot" data-slide="2"></div>
+                    <div class="onboarding-dot" data-slide="3"></div>
+                </div>
+                
+                <button class="onboarding-btn" id="onboardingNext">
+                    <span>Next</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hamburger Menu for Mobile -->
+    <button class="hamburger-menu" id="hamburgerMenu">
+        <div class="hamburger-icon">
+            <div class="hamburger-line"></div>
+            <div class="hamburger-line"></div>
+            <div class="hamburger-line"></div>
+        </div>
+    </button>
+
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Home View (initially visible) -->
+    <div id="homeView" class="app-container">
+        <div class="container">
+            <h1 class="home-title">🎵 MoodBoard AI</h1>
+            <p class="home-subtitle">Your personal AI companion for mood tracking, mindfulness, and well-being</p>
+            
+            <div class="welcome-message" id="welcomeMessage">
+                Welcome! 👋
+            </div>
+            
+            <div class="quote-container">
+                <div class="quote-text" id="quoteText">
+                    "The mind is everything. What you think you become."
+                </div>
+                <div class="quote-author" id="quoteAuthor">
+                    — Buddha
+                </div>
+            </div>
+            
+            <button class="get-started-btn" id="getStartedBtn">
+                <span>🚀 Get Started</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main App Layout (hidden initially, shown after getting started) -->
+    <div class="app-layout" id="mainAppLayout" style="display: none;">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">🎵 MoodBoard AI</div>
+                <div class="sidebar-subtitle">Your wellness companion</div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <div class="nav-item">
+                    <button id="showForm" class="nav-button active">
+                        <div class="nav-icon">🎭</div>
+                        <div class="nav-label">Mood Entry</div>
+                    </button>
+                </div>
+                <div class="nav-item">
+                    <button id="showHistory" class="nav-button">
+                        <div class="nav-icon">📖</div>
+                        <div class="nav-label">Mood History</div>
+                    </button>
+                </div>
+                <div class="nav-item">
+                    <button id="showTrends" class="nav-button">
+                        <div class="nav-icon">📊</div>
+                        <div class="nav-label">Mood Trends</div>
+                    </button>
+                </div>
+                <div class="nav-item">
+                    <button id="showInsights" class="nav-button">
+                        <div class="nav-icon">🧠</div>
+                        <div class="nav-label">Insights</div>
+                    </button>
+                </div>
+                <div class="nav-item">
+                    <button id="showAchievements" class="nav-button">
+                        <div class="nav-icon">🏆</div>
+                        <div class="nav-label">Achievements</div>
+                    </button>
+                </div>
+                <div class="nav-item">
+                    <button id="showSettings" class="nav-button">
+                        <div class="nav-icon">⚙️</div>
+                        <div class="nav-label">Settings</div>
+                    </button>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <div class="content-container">
+            
+                <!-- Mood Entry View (existing form) - initially visible -->
+                <div id="moodEntryView">
+                    <div class="card">
+                        <form id="moodForm">
+                            <div class="form-group">
+                                <label for="moodSelect">🌟 How are you feeling right now?</label>
+                                <select id="moodSelect" required>
+                                    <option value="">Select your mood...</option>
+                                    <option value="😊 Happy">😊 Happy</option>
+                                    <option value="😐 Neutral">😐 Neutral</option>
+                                    <option value="😫 Tired">😫 Tired</option>
+                                    <option value="😠 Frustrated">😠 Frustrated</option>
+                                    <option value="😔 Sad">😔 Sad</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="moodNote">💭 Tell us more (optional):</label>
+                                <textarea id="moodNote" placeholder="Describe what's affecting your mood today..."></textarea>
+                            </div>
+                            
+                            <button type="submit"><span>✨ Get AI Suggestions</span></button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- AI Suggestions (moved outside moodEntryView so it can persist across tabs) - initially hidden -->
+                <div id="suggestions" class="card" style="display:none;">
+                    <h3>💡 AI Suggestions</h3>
+                    <div id="suggestionContent" class="suggestion-text">
+                        <!-- AI suggestions will appear here -->
+                    </div>
+                </div>
+            
+            <!-- Mood History View -->
+            <div id="historyView" style="display:none;">
+                <div id="historyContent">
+                    <!-- History entries will load here -->
+                </div>
+            </div>
+
+            <!-- Mood Trends View -->
+            <div id="trendsView" style="display:none;">
+                <h2>📈 Mood Trends Over Time</h2>
+                <div class="card">
+                    <div id="chartContainer" style="position: relative; height: 400px;">
+                        <canvas id="moodChart"></canvas>
+                    </div>
+                    <div id="trendsLoading" style="text-align: center; color: #64748b; padding: 40px; display: none;">
+                        Loading mood trends...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Insights View -->
+            <div id="insightsView" style="display:none;">
+                <h2>🧠 Personal Insights</h2>
+                <div id="insightsLoading" style="text-align: center; color: #64748b; padding: 40px; display: none;">
+                    Analyzing your mood patterns...
+                </div>
+                
+                <div id="insightsContent">
+                    <!-- Most Frequent Mood Card -->
+                    <div class="insight-card">
+                        <div class="insight-icon">🎯</div>
+                        <div class="insight-content">
+                            <h3>Most Frequent Mood</h3>
+                            <div class="insight-value" id="mostFrequentMood">-</div>
+                            <div class="insight-description" id="mostFrequentMoodDesc">Analyzing your mood patterns...</div>
+                        </div>
+                    </div>
+
+                    <!-- Time Analysis Card -->
+                    <div class="insight-card">
+                        <div class="insight-icon">⏰</div>
+                        <div class="insight-content">
+                            <h3>Peak Mood Time</h3>
+                            <div class="insight-value" id="peakMoodTime">-</div>
+                            <div class="insight-description" id="peakMoodTimeDesc">Finding when you log moods most...</div>
+                        </div>
+                    </div>
+
+                    <!-- Weekly Breakdown Card -->
+                    <div class="insight-card full-width">
+                        <div class="insight-icon">📊</div>
+                        <div class="insight-content">
+                            <h3>Weekly Mood Breakdown</h3>
+                            <div class="chart-container-small">
+                                <canvas id="weeklyChart"></canvas>
+                            </div>
+                            <div class="insight-description">Your mood distribution this week</div>
+                        </div>
+                    </div>
+
+                    <!-- Streak Counter Card -->
+                    <div class="insight-card">
+                        <div class="insight-icon">🔥</div>
+                        <div class="insight-content">
+                            <h3>Current Streak</h3>
+                            <div class="insight-value" id="currentStreak">-</div>
+                            <div class="insight-description" id="streakDesc">Consecutive days of mood logging</div>
+                        </div>
+                    </div>
+
+                    <!-- Progress Summary Card -->
+                    <div class="insight-card">
+                        <div class="insight-icon">📈</div>
+                        <div class="insight-content">
+                            <h3>Weekly Progress</h3>
+                            <div class="insight-value" id="weeklyProgress">-</div>
+                            <div class="insight-description" id="progressDesc">Comparing this week to last week</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Achievements View -->
+            <div id="achievementsView" style="display:none;">
+                <h2>🏆 Achievements & Goals</h2>
+                
+                <!-- Streak Tracker -->
+                <div class="achievement-section">
+                    <h3>🔥 Daily Streak</h3>
+                    <div class="streak-display">
+                        <div class="streak-flame-container">
+                            <div class="streak-flame" id="streakFlame">🔥</div>
+                        </div>
+                        <div class="streak-info">
+                            <div class="streak-number" id="achievementStreak">0</div>
+                            <div class="streak-label">Day Streak!</div>
+                            <div class="streak-description" id="streakDescription">Start your journey today!</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Unlocked Badges -->
+                <div class="achievement-section">
+                    <h3>🎖️ Unlocked Badges</h3>
+                    <div class="badges-grid" id="badgesGrid">
+                        <!-- Badges will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Progress Goals -->
+                <div class="achievement-section">
+                    <h3>🎯 Current Goals</h3>
+                    <div class="goals-container" id="goalsContainer">
+                        <!-- Goals will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Achievement Stats -->
+                <div class="achievement-section">
+                    <h3>📊 Your Stats</h3>
+                    <div class="stats-grid" id="statsGrid">
+                        <div class="stat-card">
+                            <div class="stat-icon">📝</div>
+                            <div class="stat-value" id="totalLogs">0</div>
+                            <div class="stat-label">Total Logs</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">💭</div>
+                            <div class="stat-value" id="totalNotes">0</div>
+                            <div class="stat-label">Notes Written</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">🎭</div>
+                            <div class="stat-value" id="uniqueMoods">0</div>
+                            <div class="stat-label">Moods Used</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">📅</div>
+                            <div class="stat-value" id="activeDays">0</div>
+                            <div class="stat-label">Days Active</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Confetti Container for celebrations -->
+                <div id="confettiContainer" class="confetti-container"></div>
+            </div>
+
+            <!-- Settings View -->
+            <div id="settingsView" style="display:none;">
+                <h2>🎛️ Settings</h2>
+                <div class="card settings-form">
+                        <div class="form-group">
+                            <label for="defaultMoodSelect">🎯 Default Mood (Optional):</label>
+                            <select id="defaultMoodSelect">
+                                <option value="">No default - always ask</option>
+                                <option value="😊 Happy">😊 Happy</option>
+                                <option value="😐 Neutral">😐 Neutral</option>
+                                <option value="😫 Tired">😫 Tired</option>
+                                <option value="😠 Frustrated">😠 Frustrated</option>
+                                <option value="😔 Sad">😔 Sad</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>🎵 Preferred Music Platform:</label>
+                            <div class="radio-group">
+                                <div class="radio-option">
+                                    <input type="radio" id="spotify" name="musicPlatform" value="spotify" checked>
+                                    <label for="spotify">Spotify</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="appleMusic" name="musicPlatform" value="appleMusic">
+                                    <label for="appleMusic">Apple Music</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>🔔 Daily Mood Reminder:</label>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="dailyReminder">
+                                <label for="dailyReminder">Send me daily mood check-in reminders</label>
+                            </div>
+                        </div>
+                        
+                        <button id="saveSettingsBtn" type="button"><span>💾 Save Settings</span></button>
+                        
+                        <div class="form-group" style="margin-top: 40px; padding-top: 30px; border-top: 2px solid rgba(255, 107, 157, 0.1);">
+                            <label>🔄 Reset Options:</label>
+                            
+                            <!-- Onboarding Reset -->
+                            <button id="resetOnboardingBtn" type="button" style="background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%); margin-top: 15px;">
+                                <span>🎯 Show Onboarding Again</span>
+                            </button>
+                            
+                            <!-- Data Reset Options -->
+                            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255, 107, 157, 0.05);">
+                                <label style="color: #ff6b9d; font-weight: 700; margin-bottom: 20px;">⚠️ Data Reset (Permanent Actions)</label>
+                                
+                                <div style="display: grid; gap: 12px;">
+                                    <button id="resetSettingsBtn" type="button" style="background: linear-gradient(135deg, #94a3b8 0%, #cbd5e1 100%); font-size: 14px; padding: 12px 20px;">
+                                        <span>⚙️ Reset Settings Only</span>
+                                    </button>
+                                    
+                                    <button id="resetLocalBtn" type="button" style="background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%); font-size: 14px; padding: 12px 20px;">
+                                        <span>📁 Reset Local Data</span>
+                                    </button>
+                                    
+                                    <button id="resetAllBtn" type="button" style="background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); font-size: 14px; padding: 12px 20px; margin-top: 8px;">
+                                        <span>💥 Reset All Local Data</span>
+                                    </button>
+                                </div>
+                                
+                                <div style="margin-top: 16px; padding: 16px; background: rgba(239, 68, 68, 0.1); border-radius: 12px; border-left: 4px solid #ef4444;">
+                                    <div style="font-size: 13px; color: #fca5a5; font-weight: 600; margin-bottom: 8px;">🚨 Warning</div>
+                                    <div style="font-size: 12px; color: #fecaca; line-height: 1.5;">
+                                        Data reset actions are <strong>permanent and cannot be undone</strong>. Make sure you have backups if needed.
+                                        <br><br>
+                                        • <strong>Settings:</strong> Resets app preferences only<br>
+                                        • <strong>Local Data:</strong> Deletes mood-history.json<br>
+                                        • <strong>All Local Data:</strong> Complete reset of local data and settings
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="settingsMessage" class="settings-message">
+                            <!-- Settings message will appear here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Daily Reminder Modal -->
+    <div id="dailyReminderModal" class="reminder-modal-overlay" style="display: none;">
+        <div class="reminder-modal">
+            <div class="reminder-modal-content">
+                <div class="reminder-icon">👋</div>
+                <h3 class="reminder-title">Don't forget to log your mood today!</h3>
+                <p class="reminder-message">Taking a moment to check in with yourself helps build mindful habits.</p>
+                <div class="reminder-buttons">
+                    <button id="logNowBtn" class="reminder-btn reminder-btn-primary">
+                        <span>📝 Log Now</span>
+                    </button>
+                    <button id="dismissReminderBtn" class="reminder-btn reminder-btn-secondary">
+                        <span>⏰ Dismiss</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="renderer.js"></script>
+</body>
+</html> 
