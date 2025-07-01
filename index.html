@@ -567,6 +567,286 @@
             line-height: 1.8;
             font-size: 15px;
         }
+
+        /* Spotify Recommendations Styles */
+        .spotify-recommendations {
+            margin-top: 20px;
+            background: linear-gradient(145deg, rgba(29, 185, 84, 0.08) 0%, rgba(30, 215, 96, 0.12) 100%);
+            border-radius: 20px;
+            padding: 24px;
+            border: 2px solid rgba(29, 185, 84, 0.2);
+            box-shadow: 
+                0 12px 24px rgba(29, 185, 84, 0.08),
+                0 6px 12px rgba(30, 215, 96, 0.06);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .spotify-recommendations::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #1ed760, #1db954);
+        }
+
+        .spotify-recommendations:hover {
+            transform: translateY(-2px);
+            box-shadow: 
+                0 16px 32px rgba(29, 185, 84, 0.12),
+                0 8px 16px rgba(30, 215, 96, 0.08);
+        }
+
+        .spotify-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid rgba(29, 185, 84, 0.15);
+        }
+
+        .spotify-logo {
+            flex-shrink: 0;
+            filter: drop-shadow(0 2px 4px rgba(29, 185, 84, 0.3));
+            transition: all 0.3s ease;
+        }
+
+        .spotify-header:hover .spotify-logo {
+            transform: scale(1.1) rotate(5deg);
+            filter: drop-shadow(0 4px 8px rgba(29, 185, 84, 0.5));
+        }
+
+        .spotify-header h4 {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            font-size: 1.1em;
+            color: #1ed760;
+            text-shadow: 0 2px 4px rgba(29, 185, 84, 0.2);
+        }
+
+        .tracks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .track-card {
+            background: linear-gradient(145deg, rgba(42, 43, 56, 0.7) 0%, rgba(51, 54, 73, 0.8) 100%);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(29, 185, 84, 0.2);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            animation: slideInUp 0.6s ease-out;
+            animation-delay: calc(var(--index, 0) * 0.1s);
+            animation-fill-mode: backwards;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .track-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(29, 185, 84, 0.05), rgba(30, 215, 96, 0.08));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            border-radius: 16px;
+        }
+
+        .track-card:hover::before {
+            opacity: 1;
+        }
+
+        .track-card:hover {
+            transform: translateY(-4px) scale(1.02);
+            border-color: rgba(29, 185, 84, 0.4);
+            box-shadow: 
+                0 12px 24px rgba(29, 185, 84, 0.15),
+                0 6px 12px rgba(30, 215, 96, 0.1),
+                0 0 0 1px rgba(29, 185, 84, 0.2);
+        }
+
+        .track-info {
+            position: relative;
+            z-index: 2;
+            margin-bottom: 16px;
+        }
+
+        .track-name {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            font-size: 1.05em;
+            color: #f1f5f9;
+            margin-bottom: 6px;
+            line-height: 1.3;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .artist-name {
+            color: #cbd5e1;
+            font-weight: 500;
+            margin-bottom: 4px;
+            font-size: 0.95em;
+        }
+
+        .album-name {
+            color: #94a3b8;
+            font-size: 0.85em;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+
+        .spotify-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #1ed760, #1db954);
+            color: white;
+            text-decoration: none;
+            padding: 10px 16px;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 0.9em;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 4px 12px rgba(29, 185, 84, 0.3);
+            overflow: hidden;
+        }
+
+        .spotify-link::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #1ab854, #17a049);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            border-radius: 25px;
+        }
+
+        .spotify-link:hover::before {
+            opacity: 1;
+        }
+
+        .spotify-link:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 
+                0 8px 20px rgba(29, 185, 84, 0.4),
+                0 4px 12px rgba(30, 215, 96, 0.3),
+                0 0 0 2px rgba(29, 185, 84, 0.3);
+        }
+
+        .spotify-link:active {
+            transform: translateY(0) scale(1.02);
+        }
+
+        .spotify-icon {
+            transition: transform 0.3s ease;
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+        }
+
+        .spotify-link:hover .spotify-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        /* Fallback message styling */
+        .spotify-recommendations.fallback .tracks-grid {
+            display: none;
+        }
+
+        .fallback-message {
+            color: #cbd5e1;
+            line-height: 1.6;
+            font-size: 0.95em;
+            margin: 0;
+            padding: 16px;
+            background: linear-gradient(135deg, rgba(42, 43, 56, 0.5), rgba(51, 54, 73, 0.6));
+            border-radius: 12px;
+            border: 1px solid rgba(29, 185, 84, 0.15);
+            text-align: center;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .tracks-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            
+            .track-card {
+                padding: 16px;
+            }
+            
+            .spotify-recommendations {
+                padding: 20px;
+                margin-top: 16px;
+            }
+            
+            .spotify-header h4 {
+                font-size: 1em;
+            }
+            
+            .track-name {
+                font-size: 1em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .spotify-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 8px;
+            }
+            
+            .spotify-logo {
+                margin: 0 auto;
+            }
+            
+            .track-card {
+                padding: 14px;
+            }
+            
+            .spotify-link {
+                width: 100%;
+                justify-content: center;
+                padding: 12px 16px;
+            }
+        }
         
         /* History view styles */
         .history-entry {

@@ -24,6 +24,7 @@
     "@langchain/openai": "^0.5.16",
     "dotenv": "^17.0.0",
     "express": "^5.1.0",
-    "firebase-admin": "^13.4.0"
+    "firebase-admin": "^13.4.0",
+    "spotify-web-api-node": "^5.0.2"
   }
 }

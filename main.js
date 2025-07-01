@@ -8,6 +8,7 @@ import {
   isFirebaseConnected 
 } from './firebaseClient.js';
 import { runMoodAnalysisFlow } from './langgraphFlow.js';
+import { getRecommendationsFromUserPlaylists } from './spotifyRecommender.cjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -227,6 +228,28 @@ ipcMain.handle('analyze-mood-with-langgraph', async (event, moodEntry) => {
       success: false,
       insight: "✨ Every emotion you feel is valid and temporary. Take a deep breath, and remember that you're stronger than you know.",
       analysis: "LangGraph analysis failed",
+      error: error.message
+    };
+  }
+});
+
+// Handle Spotify music recommendations
+ipcMain.handle('get-spotify-recommendations', async (event, moodText) => {
+  console.log('get-spotify-recommendations handler called for mood:', moodText);
+  
+  try {
+    const recommendations = await getRecommendationsFromUserPlaylists(moodText);
+    console.log('✅ Spotify recommendations retrieved:', recommendations.length, 'tracks');
+    
+    return {
+      success: true,
+      recommendations: recommendations.slice(0, 5) // Limit to 5 tracks for UI
+    };
+  } catch (error) {
+    console.error('❌ Error getting Spotify recommendations:', error);
+    return {
+      success: false,
+      recommendations: [],
       error: error.message
     };
   }
