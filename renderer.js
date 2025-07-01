@@ -41,7 +41,7 @@ const saveSettingsBtn = document.getElementById('saveSettingsBtn');
 const resetOnboardingBtn = document.getElementById('resetOnboardingBtn');
 const settingsMessage = document.getElementById('settingsMessage');
 
-// Reset button elements (keeping non-Firebase ones)
+// Reset button elements
 const resetLocalBtn = document.getElementById('resetLocalBtn');
 const resetSettingsBtn = document.getElementById('resetSettingsBtn');
 const resetAllBtn = document.getElementById('resetAllBtn');
@@ -610,7 +610,7 @@ async function displayAISuggestions(moodEntry, selectedMood, noteText) {
         <p><strong>🎶 Music:</strong> <a href="${response.music}" target="_blank">Click here to listen</a></p>
     `;
     
-    // Log mood entry to Firebase after AI suggestion is displayed
+    // Log mood entry after AI suggestion is displayed
     const moodEntryObject = {
         mood: selectedMood,
         note: noteText,

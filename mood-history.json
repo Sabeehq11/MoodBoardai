@@ -222,5 +222,33 @@
     "suggestion": "✍️ Try journaling your thoughts or do some deep breathing exercises to release tension.",
     "music": "https://open.spotify.com/playlist/37i9dQZF1DWXc5bfxkQiHw",
     "timestamp": "6/30/2025, 11:55:23 PM"
+  },
+  {
+    "mood": "😊 Happy",
+    "note": "hooray i am happy!",
+    "suggestion": "🎵 Share your good mood with someone! Keep that positive energy flowing.",
+    "music": "https://open.spotify.com/playlist/37i9dQZF1DXdPec7aLTmlC",
+    "timestamp": "7/1/2025, 3:29:41 AM"
+  },
+  {
+    "mood": "😫 Tired",
+    "note": "ive been working for so long",
+    "suggestion": "☕ Take a break with a warm drink and short walk outside for fresh air.",
+    "music": "https://open.spotify.com/playlist/37i9dQZF1DWZeKCadgRdKQ",
+    "timestamp": "7/1/2025, 3:32:13 AM"
+  },
+  {
+    "mood": "😐 Neutral",
+    "note": "im bored",
+    "suggestion": "🧘 Try a 5-minute meditation or short walk to reset your energy.",
+    "music": "https://open.spotify.com/playlist/37i9dQZF1DWZeKCadgRdKQ",
+    "timestamp": "7/1/2025, 3:34:57 AM"
+  },
+  {
+    "mood": "😔 Sad",
+    "note": "if this doesnt work...",
+    "suggestion": "💬 Reach out to someone you trust, or do something comforting like listening to music.",
+    "music": "https://open.spotify.com/playlist/37i9dQZF1DWX83CujKHHOn",
+    "timestamp": "7/1/2025, 3:38:19 AM"
   }
 ]

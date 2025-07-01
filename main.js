@@ -2,6 +2,11 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import { 
+  saveMoodEntryToFirestore, 
+  getMoodHistoryFromFirestore,
+  isFirebaseConnected 
+} from './firebaseClient.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,8 +37,12 @@ function createWindow() {
 }
 
 // Register IPC handlers before app is ready
-// Handle mood entry logging with local file storage
+// Handle mood entry logging with both Firebase and local file storage
 ipcMain.handle('log-mood-entry', async (event, moodEntryObject) => {
+  let localResult = { success: false };
+  let firebaseResult = { success: false };
+
+  // Always save to local file (fallback)
   try {
     const moodHistoryFile = path.join(__dirname, 'mood-history.json');
     
@@ -50,36 +59,67 @@ ipcMain.handle('log-mood-entry', async (event, moodEntryObject) => {
     // Write back to file
     fs.writeFileSync(moodHistoryFile, JSON.stringify(moodHistory, null, 2));
     
-    console.log('Mood entry logged successfully:', moodEntryObject.mood, '-', moodEntryObject.timestamp);
-    return { success: true, id: moodEntryObject.timestamp };
+    localResult = { success: true, id: moodEntryObject.timestamp };
+    console.log('✅ Local: Mood entry logged successfully:', moodEntryObject.mood, '-', moodEntryObject.timestamp);
   } catch (error) {
-    console.error('Error logging mood entry:', error);
-    return { success: false, error: error.message };
+    console.error('❌ Local: Error logging mood entry:', error);
+    localResult = { success: false, error: error.message };
   }
+
+  // Try to save to Firebase (if connected)
+  try {
+    firebaseResult = await saveMoodEntryToFirestore(moodEntryObject);
+  } catch (error) {
+    console.error('❌ Firebase: Error logging mood entry:', error);
+    firebaseResult = { success: false, error: error.message };
+  }
+
+  // Return combined result
+  return {
+    success: localResult.success || firebaseResult.success,
+    local: localResult,
+    firebase: firebaseResult,
+    id: localResult.id || firebaseResult.id
+  };
 });
 
-// Handle mood history retrieval from local file
+// Handle mood history retrieval from Firebase with local fallback
 ipcMain.handle('get-mood-history', async () => {
-  console.log('get-mood-history handler called - retrieving from local file');
+  console.log('get-mood-history handler called - trying Firebase first, then local fallback');
   
+  // Try Firebase first (if connected)
+  if (isFirebaseConnected) {
+    try {
+      const firebaseResult = await getMoodHistoryFromFirestore();
+      if (firebaseResult.success && firebaseResult.data.length > 0) {
+        console.log('✅ Firebase: Successfully loaded mood history:', firebaseResult.data.length, 'entries');
+        return firebaseResult.data;
+      }
+    } catch (error) {
+      console.error('❌ Firebase: Error reading mood history:', error);
+    }
+  }
+
+  // Fallback to local file
   try {
     const moodHistoryFile = path.join(__dirname, 'mood-history.json');
     
     if (!fs.existsSync(moodHistoryFile)) {
-      console.log('No mood history file found, returning empty array');
+      console.log('📝 Local: No mood history file found, returning empty array');
       return [];
     }
     
     const data = fs.readFileSync(moodHistoryFile, 'utf8');
     const moodHistory = JSON.parse(data);
     
-    console.log('Successfully loaded mood history from local file:', moodHistory.length, 'entries');
+    console.log('✅ Local: Successfully loaded mood history from local file:', moodHistory.length, 'entries');
     return moodHistory;
   } catch (error) {
-    console.error('Error reading mood history from local file:', error);
+    console.error('❌ Local: Error reading mood history from local file:', error);
     return [];
   }
 });
+
 
 // Handle user settings saving with local file storage
 ipcMain.handle('save-user-settings', async (event, settings) => {

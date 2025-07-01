@@ -39,22 +39,15 @@ A beautiful, modern Electron-based mood tracking application with AI-powered sug
    npm install
    ```
 
-2. **Set up Firebase Firestore (Required for Data Storage)**
-   - Go to the [Firebase Console](https://console.firebase.google.com/)
-   - Create a new project or use an existing one
-   - Enable Firestore Database (Authentication not required)
-   - Get your Firebase configuration from Project Settings > General > Your apps
-   - Create a `.env` file in the project root with your Firebase credentials (see example below)
-
-3. **Run the Application**
+2. **Run the Application**
    ```bash
    npm start
    ```
 
-4. **First Launch**
+3. **First Launch**
    - The app opens with a welcoming home screen
    - Click "Get Started" to enter the main application
-   - Your mood entries are automatically saved to Firestore
+   - Your mood entries are automatically saved locally
    - The tab navigation appears after leaving the home screen
 
 ## 🎨 Design Features
@@ -71,19 +64,12 @@ A beautiful, modern Electron-based mood tracking application with AI-powered sug
 - Direct links to curated playlists for each emotional state
 - Configurable music platform preferences
 
-## 💾 Data Storage with Firestore
+## 💾 Data Storage
 
-### ☁️ Firestore Database
-- **Cloud Storage**: All mood entries and settings stored in Firestore
-- **No Authentication Required**: Simplified setup for local desktop use
-- **Automatic Syncing**: Data is saved to Firestore on each mood entry
-- **Fixed User ID**: Uses a local desktop user identifier for data organization
-
-### 🏠 Local Desktop App Design
-- **Single User**: Designed for personal use on your desktop
-- **Persistent Storage**: Your data is safely stored in Google's Firestore
-- **Offline Tolerance**: App continues to work, syncs when connection returns
-- **Simple Setup**: Just configure Firebase project, no user accounts needed
+### 🏠 Local Storage
+- All mood entries and settings stored locally on your device
+- JSON file-based storage for simplicity and reliability
+- No external dependencies required
 
 ## 🏗️ Technology Stack
 
@@ -109,79 +95,19 @@ The app consists of:
 - `index.html`: UI structure and styling
 - `server.js`: Additional server functionality (if needed)
 
-## 🌟 New in Latest Version
+## 🌟 Features
 
-- **🔥 Firebase Firestore Integration**: Cloud storage without authentication complexity
-- **☁️ Automatic Cloud Sync**: All mood entries saved to Firestore automatically
-- **🏠 Enhanced Home Screen**: Beautiful welcome with personalized greetings
+- **🏠 Beautiful Home Screen**: Welcome with personalized greetings
 - **📝 Daily Quotes**: 20+ inspirational quotes that rotate randomly
 - **✨ Smooth Animations**: Enhanced UI transitions and fade effects
 - **👤 Personalization**: Uses system username for welcome messages
 - **🎯 Improved UX**: Better navigation flow and visual hierarchy
-- **🔧 Simplified Setup**: No user accounts needed, just configure Firebase
-
-## 🔥 Firebase Setup Guide
-
-### Step 1: Create Firebase Project
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Click "Add project" and follow the setup steps
-3. Choose your project name and settings
-
-### Step 2: Set up Firestore Database
-1. Go to **Firestore Database** in your Firebase project
-2. Click "Create database"
-3. Choose "Start in test mode" for development
-4. Select your preferred location
-
-### Step 3: Configure Environment Variables
-1. Go to **Project Settings** (gear icon) > **General**
-2. Scroll down to "Your apps" section
-3. Click **Add app** > **Web app**
-4. Register your app and copy the configuration object
-5. Create a `.env` file in your project root
-6. Add your Firebase credentials to the `.env` file (see Required Environment Variables section above)
-
-### Step 4: Security Rules (Optional)
-For production, you may want to update your Firestore security rules. Since this is a personal desktop app, you can use simple rules:
-
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Allow read/write access for local desktop app
-    match /users/local-desktop-user/{document=**} {
-      allow read, write: if true;
-    }
-  }
-}
-```
-
-**Note**: For development, you can start with test mode rules that allow all access, then tighten them for production use.
-
-### Required Environment Variables
-Create a `.env` file in the root directory with your Firebase credentials:
-
-```bash
-# Firebase Configuration (Required)
-FIREBASE_API_KEY=your_actual_api_key_here
-FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-FIREBASE_PROJECT_ID=your-project-id
-FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-FIREBASE_MESSAGING_SENDER_ID=123456789012
-FIREBASE_APP_ID=1:123456789012:web:abcdef123456789012
-
-# Optional Development Settings
-NODE_ENV=development
-USE_FIRESTORE_EMULATOR=false
-```
-
-**Security Note**: Never commit your `.env` file to version control. Add `.env` to your `.gitignore` file.
+- **💾 Local Storage**: All data stored safely on your device
 
 ## 🔒 Privacy & Security
 
 - **Personal Desktop App**: Designed for single-user personal use
-- **Google Firestore**: Your data is stored securely in Google's cloud infrastructure
-- **Fixed User ID**: Uses consistent `local-desktop-user` identifier
+- **Local Data Storage**: Your data stays on your device
 - **No Data Mining**: We don't analyze or sell your mood data
 - **Open Source**: Full transparency in data handling
-- **Simple & Secure**: No complex authentication, just your private mood data
+- **Simple & Secure**: No external connections required for basic functionality
