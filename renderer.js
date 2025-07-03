@@ -37,6 +37,7 @@ const confettiContainer = document.getElementById('confettiContainer');
 
 // Settings elements
 const defaultMoodSelect = document.getElementById('defaultMoodSelect');
+const calendarAutomationCheckbox = document.getElementById('calendarAutomation');
 const saveSettingsBtn = document.getElementById('saveSettingsBtn');
 const resetOnboardingBtn = document.getElementById('resetOnboardingBtn');
 const settingsMessage = document.getElementById('settingsMessage');
@@ -625,6 +626,27 @@ async function displayAISuggestions(moodEntry, selectedMood, noteText) {
         
         if (result.success) {
             console.log('Mood entry saved successfully to Firestore');
+            
+            // Show calendar automation feedback if enabled
+            if (result.calendar?.success) {
+                console.log('📅 Calendar automation successful:', result.calendar.eventType);
+                
+                // Add calendar automation feedback to the display
+                suggestionContent.innerHTML += `
+                    <div style="margin-top: 16px; padding: 12px; background: rgba(34, 197, 94, 0.1); border-radius: 8px; color: #86efac; border: 1px solid rgba(34, 197, 94, 0.2);">
+                        <strong>📅 Calendar Event Created:</strong><br/>
+                        ${result.calendar.eventType} (${result.calendar.duration} minutes) has been scheduled for your current mood: ${result.calendar.mood}
+                        <br/>
+                        <small style="color: #4ade80;">✨ Automatic calendar blocking is helping you optimize your day!</small>
+                    </div>
+                `;
+            } else if (result.calendar?.reason === 'disabled') {
+                console.log('📅 Calendar automation is disabled');
+            } else if (result.calendar?.reason === 'no_mapping') {
+                console.log('📅 No calendar mapping for mood:', selectedMood);
+            } else if (result.calendar?.error) {
+                console.log('📅 Calendar automation error:', result.calendar.error);
+            }
             
             // Call LangGraph flow for additional analysis
             console.log('🚀 Calling LangGraph flow for additional insights...');
@@ -1723,6 +1745,11 @@ async function loadSettings() {
             if (settings.dailyReminder !== undefined) {
                 document.getElementById('dailyReminder').checked = settings.dailyReminder;
             }
+            
+            // Set calendar automation
+            if (settings.calendarAutomation !== undefined) {
+                calendarAutomationCheckbox.checked = settings.calendarAutomation;
+            }
         }
         
     } catch (error) {
@@ -1737,12 +1764,14 @@ async function saveSettings() {
         const defaultMood = defaultMoodSelect.value;
         const musicPlatform = document.querySelector('input[name="musicPlatform"]:checked')?.value || 'spotify';
         const dailyReminder = document.getElementById('dailyReminder').checked;
+        const calendarAutomation = calendarAutomationCheckbox.checked;
         
         // Create settings object
         const settings = {
             defaultMood: defaultMood,
             musicPlatform: musicPlatform,
             dailyReminder: dailyReminder,
+            calendarAutomation: calendarAutomation,
             lastUpdated: new Date().toISOString()
         };
         

@@ -9,6 +9,7 @@ import {
 } from './firebaseClient.js';
 import { runMoodAnalysisFlow } from './langgraphFlow.js';
 import { getRecommendationsFromUserPlaylists } from './spotifyRecommender.cjs';
+import { processCalendarAutomation } from './calendarAutomation.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -43,6 +44,7 @@ function createWindow() {
 ipcMain.handle('log-mood-entry', async (event, moodEntryObject) => {
   let localResult = { success: false };
   let firebaseResult = { success: false };
+  let calendarResult = { success: false };
 
   // Always save to local file (fallback)
   try {
@@ -76,11 +78,31 @@ ipcMain.handle('log-mood-entry', async (event, moodEntryObject) => {
     firebaseResult = { success: false, error: error.message };
   }
 
+  // Process calendar automation (if enabled)
+  try {
+    // Get user settings to check if calendar automation is enabled
+    const settingsFile = path.join(__dirname, 'user-settings.json');
+    let userSettings = {};
+    
+    if (fs.existsSync(settingsFile)) {
+      const settingsData = fs.readFileSync(settingsFile, 'utf8');
+      userSettings = JSON.parse(settingsData);
+    }
+    
+    // Process calendar automation
+    calendarResult = await processCalendarAutomation(moodEntryObject, userSettings);
+    
+  } catch (error) {
+    console.error('❌ Calendar: Error processing calendar automation:', error);
+    calendarResult = { success: false, error: error.message };
+  }
+
   // Return combined result
   return {
     success: localResult.success || firebaseResult.success,
     local: localResult,
     firebase: firebaseResult,
+    calendar: calendarResult,
     id: localResult.id || firebaseResult.id
   };
 });
