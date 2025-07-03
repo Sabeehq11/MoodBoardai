@@ -369,6 +369,120 @@ async function getTeamMoodDataFromFirestore(teamName) {
   }
 }
 
+// Get shared mood entries for team feed
+async function getSharedMoodEntriesFromFirestore() {
+  if (!isFirebaseConnected || !db) {
+    console.log('⚠️ Firebase: Not connected, skipping shared mood entries retrieval');
+    return { success: false, reason: 'not_connected', data: [] };
+  }
+
+  try {
+    const snapshot = await db.collection('mood_entries')
+      .where('shared', '==', true)
+      .orderBy('timestamp', 'desc')
+      .limit(50) // Limit to last 50 shared entries
+      .get();
+    
+    const sharedEntries = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      sharedEntries.push({
+        id: doc.id,
+        ...data,
+        // Convert Firestore timestamp to ISO string if needed
+        timestamp: data.timestamp || data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString()
+      });
+    });
+    
+    console.log('✅ Firebase: Retrieved', sharedEntries.length, 'shared mood entries from Firestore');
+    return { success: true, data: sharedEntries };
+    
+  } catch (error) {
+    console.error('❌ Firebase: Failed to retrieve shared mood entries:', error.message);
+    return { success: false, error: error.message, data: [] };
+  }
+}
+
+// Save mood entry to teamFeed collection when shared
+async function saveMoodEntryToTeamFeed(moodEntry) {
+  if (!isFirebaseConnected || !db) {
+    console.log('⚠️ Firebase: Not connected, skipping teamFeed save');
+    return { success: false, reason: 'not_connected' };
+  }
+
+  try {
+    // Create team feed entry with essential data only
+    const teamFeedEntry = {
+      mood: moodEntry.mood,
+      note: moodEntry.note || '',
+      timestamp: moodEntry.timestamp,
+      userId: moodEntry.userId,
+      displayName: moodEntry.displayName || moodEntry.userId || 'Anonymous',
+      createdAt: new Date()
+    };
+
+    const docRef = await db.collection('teamFeed').add(teamFeedEntry);
+    
+    console.log('✅ Firebase: Mood entry saved to teamFeed with ID:', docRef.id);
+    return { success: true, id: docRef.id };
+    
+  } catch (error) {
+    console.error('❌ Firebase: Failed to save mood entry to teamFeed:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+// Get team feed entries from teamFeed collection
+async function getTeamFeedEntriesFromFirestore() {
+  if (!isFirebaseConnected || !db) {
+    console.log('⚠️ Firebase: Not connected, skipping teamFeed retrieval');
+    return { success: false, reason: 'not_connected', data: [] };
+  }
+
+  try {
+    // Try with orderBy first
+    let snapshot;
+    try {
+      snapshot = await db.collection('teamFeed')
+        .orderBy('createdAt', 'desc')
+        .limit(50)
+        .get();
+    } catch (indexError) {
+      console.log('⚠️ Firebase: OrderBy query failed (likely needs index), trying fallback query:', indexError.message);
+      
+      // Fallback: query without orderBy (will sort in client)
+      snapshot = await db.collection('teamFeed')
+        .limit(50)
+        .get();
+    }
+    
+    const teamFeedEntries = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      teamFeedEntries.push({
+        id: doc.id,
+        ...data,
+        // Convert Firestore timestamp to ISO string if needed
+        timestamp: data.timestamp || data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString()
+      });
+    });
+    
+    // Sort on client side if we used fallback query
+    teamFeedEntries.sort((a, b) => {
+      const aTime = new Date(a.createdAt || a.timestamp);
+      const bTime = new Date(b.createdAt || b.timestamp);
+      return bTime - aTime; // Newest first
+    });
+    
+    console.log('✅ Firebase: Retrieved', teamFeedEntries.length, 'team feed entries from Firestore');
+    return { success: true, data: teamFeedEntries };
+    
+  } catch (error) {
+    console.error('❌ Firebase: Failed to retrieve team feed entries:', error.message);
+    return { success: false, error: error.message, data: [] };
+  }
+}
+
 // Initialize Firebase when module loads
 initializeFirebase();
 
@@ -383,5 +497,8 @@ export {
   saveUserTeamToFirestore,
   getUserTeamFromFirestore,
   getTeamMoodDataFromFirestore,
+  getSharedMoodEntriesFromFirestore,
+  saveMoodEntryToTeamFeed,
+  getTeamFeedEntriesFromFirestore,
   isFirebaseConnected
 }; 

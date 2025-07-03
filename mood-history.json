@@ -362,5 +362,94 @@
     "suggestion": "🎵 Share your good mood with someone! Keep that positive energy flowing.",
     "music": "https://open.spotify.com/playlist/37i9dQZF1DXdPec7aLTmlC",
     "timestamp": "7/2/2025, 11:28:36 PM"
+  },
+  {
+    "mood": "😔 Sad",
+    "note": "im not feeling it today",
+    "suggestion": "💬 Reach out to someone you trust, or do something comforting like listening to music.",
+    "music": "https://open.spotify.com/playlist/37i9dQZF1DWX83CujKHHOn",
+    "timestamp": "7/2/2025, 11:41:55 PM"
+  },
+  {
+    "mood": "😊 Happy",
+    "note": "today is amazing!",
+    "suggestion": "🎵 Share your good mood with someone! Keep that positive energy flowing.",
+    "music": "https://open.spotify.com/playlist/37i9dQZF1DXdPec7aLTmlC",
+    "timestamp": "7/2/2025, 11:45:00 PM"
+  },
+  {
+    "mood": "😔 Sad",
+    "note": "im sad!",
+    "suggestion": "💬 Reach out to someone you trust, or do something comforting like listening to music.",
+    "music": "https://open.spotify.com/playlist/37i9dQZF1DWX83CujKHHOn",
+    "timestamp": "7/3/2025, 12:17:53 AM"
+  },
+  {
+    "mood": "😊 Happy",
+    "note": "im super confident today!",
+    "suggestion": "🎵 Share your good mood with someone! Keep that positive energy flowing.",
+    "music": "https://open.spotify.com/playlist/37i9dQZF1DXdPec7aLTmlC",
+    "timestamp": "7/3/2025, 2:21:10 PM",
+    "shared": {},
+    "userId": "sabee"
+  },
+  {
+    "mood": "😔 Sad",
+    "note": "today was ok",
+    "suggestion": "💬 Reach out to someone you trust, or do something comforting like listening to music.",
+    "music": "https://open.spotify.com/playlist/37i9dQZF1DWX83CujKHHOn",
+    "timestamp": "7/3/2025, 2:25:28 PM",
+    "shared": {},
+    "userId": "sabee"
+  },
+  {
+    "mood": "😊 Happy",
+    "note": "today is a great day!",
+    "suggestion": "🎵 Share your good mood with someone! Keep that positive energy flowing.",
+    "music": "https://open.spotify.com/playlist/37i9dQZF1DXdPec7aLTmlC",
+    "timestamp": "7/3/2025, 2:32:49 PM",
+    "shared": {},
+    "userId": "sabee",
+    "displayName": "sabee"
+  },
+  {
+    "mood": "😫 Tired",
+    "note": "damnnnn",
+    "suggestion": "☕ Take a break with a warm drink and short walk outside for fresh air.",
+    "music": "https://open.spotify.com/playlist/37i9dQZF1DWZeKCadgRdKQ",
+    "timestamp": "7/3/2025, 2:37:36 PM",
+    "shared": {},
+    "userId": "sabee",
+    "displayName": "sabee"
+  },
+  {
+    "mood": "😔 Sad",
+    "note": "today isnt so great",
+    "suggestion": "💬 Reach out to someone you trust, or do something comforting like listening to music.",
+    "music": "https://open.spotify.com/playlist/37i9dQZF1DWX83CujKHHOn",
+    "timestamp": "7/3/2025, 2:39:40 PM",
+    "shared": {},
+    "userId": "sabee",
+    "displayName": "sabee"
+  },
+  {
+    "mood": "😠 Frustrated",
+    "note": "im feeling extremely mad",
+    "suggestion": "✍️ Try journaling your thoughts or do some deep breathing exercises to release tension.",
+    "music": "https://open.spotify.com/playlist/37i9dQZF1DWXc5bfxkQiHw",
+    "timestamp": "7/3/2025, 2:42:52 PM",
+    "shared": true,
+    "userId": "sabee",
+    "displayName": "sabee"
+  },
+  {
+    "mood": "😫 Tired",
+    "note": "i feel tired",
+    "suggestion": "☕ Take a break with a warm drink and short walk outside for fresh air.",
+    "music": "https://open.spotify.com/playlist/37i9dQZF1DWZeKCadgRdKQ",
+    "timestamp": "7/3/2025, 2:46:04 PM",
+    "shared": true,
+    "userId": "sabee",
+    "displayName": "sabee"
   }
 ]

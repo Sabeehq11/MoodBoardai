@@ -12,6 +12,9 @@ import {
   saveUserTeamToFirestore,
   getUserTeamFromFirestore,
   getTeamMoodDataFromFirestore,
+  getSharedMoodEntriesFromFirestore,
+  saveMoodEntryToTeamFeed,
+  getTeamFeedEntriesFromFirestore,
   isFirebaseConnected 
 } from './firebaseClient.js';
 import { runMoodAnalysisFlow } from './langgraphFlow.js';
@@ -51,15 +54,17 @@ function createWindow() {
 ipcMain.handle('log-mood-entry', async (event, moodEntryObject) => {
   let localResult = { success: false };
   let firebaseResult = { success: false };
+  let teamFeedResult = { success: false };
   let calendarResult = { success: false };
 
   // Generate a simple userId based on system username for team functionality
   const userId = os.userInfo().username || 'anonymous';
   
-  // Add userId to mood entry for team tracking
+  // Add userId and displayName to mood entry for team tracking
   const moodEntryWithUserId = {
     ...moodEntryObject,
-    userId: userId
+    userId: userId,
+    displayName: userId // Using system username as display name for now
   };
 
   // Always save to local file (fallback)
@@ -94,6 +99,21 @@ ipcMain.handle('log-mood-entry', async (event, moodEntryObject) => {
     firebaseResult = { success: false, error: error.message };
   }
 
+  // Save to teamFeed if shared checkbox was checked
+  if (moodEntryWithUserId.shared === true) {
+    try {
+      teamFeedResult = await saveMoodEntryToTeamFeed(moodEntryWithUserId);
+      if (teamFeedResult.success) {
+        console.log('✅ TeamFeed: Shared mood entry saved to team feed with ID:', teamFeedResult.id);
+      } else {
+        console.log('❌ TeamFeed: Failed to save:', teamFeedResult.error);
+      }
+    } catch (error) {
+      console.error('❌ TeamFeed: Error saving shared mood entry:', error);
+      teamFeedResult = { success: false, error: error.message };
+    }
+  }
+
   // Process calendar automation (if enabled)
   try {
     // Get user settings to check if calendar automation is enabled
@@ -118,6 +138,7 @@ ipcMain.handle('log-mood-entry', async (event, moodEntryObject) => {
     success: localResult.success || firebaseResult.success,
     local: localResult,
     firebase: firebaseResult,
+    teamFeed: teamFeedResult,
     calendar: calendarResult,
     id: localResult.id || firebaseResult.id
   };
@@ -540,6 +561,48 @@ ipcMain.handle('get-team-mood-data', async (event, teamName) => {
   // Fallback: return empty data (team collaboration requires Firebase)
   console.log('⚠️ Team mood data requires Firebase connection');
   return { success: false, error: 'Team collaboration requires Firebase connection', data: [] };
+});
+
+// Handle getting shared team feed entries
+ipcMain.handle('get-team-feed', async () => {
+  console.log('get-team-feed handler called');
+  
+  // Try Firebase first (if connected)
+  if (isFirebaseConnected) {
+    try {
+      const firebaseResult = await getTeamFeedEntriesFromFirestore();
+      if (firebaseResult.success) {
+        console.log('✅ Firebase: Team feed entries retrieved:', firebaseResult.data.length, 'entries');
+        return firebaseResult.data;
+      } else {
+        console.log('❌ Firebase: Team feed query failed:', firebaseResult.error);
+      }
+    } catch (error) {
+      console.error('❌ Firebase: Error retrieving team feed entries:', error);
+    }
+  }
+  
+  // Fallback: check local file for shared entries
+  try {
+    const moodHistoryFile = path.join(__dirname, 'mood-history.json');
+    
+    if (!fs.existsSync(moodHistoryFile)) {
+      console.log('📝 Local: No mood history file found, returning empty array');
+      return [];
+    }
+    
+    const data = fs.readFileSync(moodHistoryFile, 'utf8');
+    const moodHistory = JSON.parse(data);
+    
+    // Filter for shared entries only
+    const sharedEntries = moodHistory.filter(entry => entry.shared === true);
+    
+    console.log('✅ Local: Retrieved', sharedEntries.length, 'shared mood entries from local file');
+    return sharedEntries;
+  } catch (error) {
+    console.error('❌ Local: Error reading shared mood entries from local file:', error);
+    return [];
+  }
 });
 
 // This method will be called when Electron has finished initialization

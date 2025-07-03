@@ -9,17 +9,20 @@ const suggestionContent = document.getElementById('suggestionContent');
 // Navigation elements
 const showFormButton = document.getElementById('showForm');
 const showHistoryButton = document.getElementById('showHistory');
+const showTeamFeedButton = document.getElementById('showTeamFeed');
 const showTrendsButton = document.getElementById('showTrends');
 const showInsightsButton = document.getElementById('showInsights');
 const showAchievementsButton = document.getElementById('showAchievements');
 const showSettingsButton = document.getElementById('showSettings');
 const moodEntryView = document.getElementById('moodEntryView');
 const historyView = document.getElementById('historyView');
+const teamFeedView = document.getElementById('teamFeedView');
 const trendsView = document.getElementById('trendsView');
 const insightsView = document.getElementById('insightsView');
 const achievementsView = document.getElementById('achievementsView');
 const settingsView = document.getElementById('settingsView');
 const historyContent = document.getElementById('historyContent');
+const teamFeedContent = document.getElementById('teamFeedContent');
 const moodChart = document.getElementById('moodChart');
 const trendsLoading = document.getElementById('trendsLoading');
 
@@ -83,6 +86,9 @@ const totalSlides = 3;
 
 // Electron IPC (import once at the top to avoid side effects)
 const { ipcRenderer } = require('electron');
+
+// Team sharing elements
+const shareWithTeamCheckbox = document.getElementById('shareWithTeam');
 
 
 
@@ -579,6 +585,7 @@ moodForm.addEventListener('submit', async function(event) {
     const selectedMood = moodSelect.value;
     const noteText = moodNote.value.trim();
     const automationRuleText = automationRule.value.trim();
+    const shareWithTeam = shareWithTeamCheckbox.checked;
     
     // Validate mood selection
     if (!selectedMood) {
@@ -626,13 +633,13 @@ moodForm.addEventListener('submit', async function(event) {
     console.log('Mood Entry:', moodEntry);
     
     // Show AI suggestions (async call) and check for automation rules
-    displayAISuggestions(moodEntry, selectedMood, noteText);
+    displayAISuggestions(moodEntry, selectedMood, noteText, shareWithTeam);
     
     // Optional: Clear the form after submission
     // moodForm.reset();
 });
 
-async function displayAISuggestions(moodEntry, selectedMood, noteText) {
+async function displayAISuggestions(moodEntry, selectedMood, noteText, shareWithTeam) {
     // Show the suggestions div with loading state
     suggestionsDiv.style.display = 'block';
     suggestionsDiv.classList.add('show');
@@ -662,8 +669,11 @@ async function displayAISuggestions(moodEntry, selectedMood, noteText) {
         note: noteText,
         suggestion: response.suggestion,
         music: response.music,
-        timestamp: new Date().toLocaleString()
+        timestamp: new Date().toLocaleString(),
+        shared: shareWithTeam
     };
+    
+
     
     // Save to Firestore
     try {
@@ -982,6 +992,7 @@ showFormButton.addEventListener('click', function() {
     moodEntryView.style.display = 'block';
     moodEntryView.style.opacity = '1';
     historyView.style.display = 'none';
+    teamFeedView.style.display = 'none';
     trendsView.style.display = 'none';
     insightsView.style.display = 'none';
     achievementsView.style.display = 'none';
@@ -1000,6 +1011,7 @@ showHistoryButton.addEventListener('click', async function() {
     moodEntryView.style.opacity = '0';
     historyView.style.display = 'block';
     historyView.style.opacity = '1';
+    teamFeedView.style.display = 'none';
     trendsView.style.display = 'none';
     insightsView.style.display = 'none';
     achievementsView.style.display = 'none';
@@ -1016,11 +1028,34 @@ showHistoryButton.addEventListener('click', async function() {
     await loadMoodHistory();
 });
 
+showTeamFeedButton.addEventListener('click', async function() {
+    // Switch to team feed view
+    moodEntryView.style.display = 'none';
+    moodEntryView.style.opacity = '0';
+    historyView.style.display = 'none';
+    teamFeedView.style.display = 'block';
+    trendsView.style.display = 'none';
+    insightsView.style.display = 'none';
+    achievementsView.style.display = 'none';
+    settingsView.style.display = 'none';
+    
+    // Hide suggestions when leaving mood entry page
+    suggestionsDiv.style.display = 'none';
+    suggestionsDiv.classList.remove('show');
+    
+    // Update button states
+    updateNavButtonStates('showTeamFeed');
+    
+    // Load team feed
+    await loadTeamFeed();
+});
+
 showTrendsButton.addEventListener('click', async function() {
     // Switch to trends view
     moodEntryView.style.display = 'none';
     moodEntryView.style.opacity = '0';
     historyView.style.display = 'none';
+    teamFeedView.style.display = 'none';
     trendsView.style.display = 'block';
     trendsView.style.opacity = '1';
     insightsView.style.display = 'none';
@@ -1043,6 +1078,7 @@ showInsightsButton.addEventListener('click', async function() {
     moodEntryView.style.display = 'none';
     moodEntryView.style.opacity = '0';
     historyView.style.display = 'none';
+    teamFeedView.style.display = 'none';
     trendsView.style.display = 'none';
     insightsView.style.display = 'block';
     insightsView.style.opacity = '1';
@@ -1065,6 +1101,7 @@ showAchievementsButton.addEventListener('click', async function() {
     moodEntryView.style.display = 'none';
     moodEntryView.style.opacity = '0';
     historyView.style.display = 'none';
+    teamFeedView.style.display = 'none';
     trendsView.style.display = 'none';
     insightsView.style.display = 'none';
     achievementsView.style.display = 'block';
@@ -1087,6 +1124,7 @@ showSettingsButton.addEventListener('click', async function() {
     moodEntryView.style.display = 'none';
     moodEntryView.style.opacity = '0';
     historyView.style.display = 'none';
+    teamFeedView.style.display = 'none';
     trendsView.style.display = 'none';
     insightsView.style.display = 'none';
     achievementsView.style.display = 'none';
@@ -2845,5 +2883,57 @@ async function handleLeaveTeam() {
 
 // Make handleLeaveTeam globally accessible
 window.handleLeaveTeam = handleLeaveTeam;
+
+// Load team feed entries
+async function loadTeamFeed() {
+    try {
+        teamFeedContent.innerHTML = '<div class="team-feed-loading">Loading team feed...</div>';
+        
+        const teamFeedEntries = await ipcRenderer.invoke('get-team-feed');
+        
+        if (teamFeedEntries.length === 0) {
+            teamFeedContent.innerHTML = `
+                <div class="team-feed-empty">
+                    <div class="empty-icon">👥</div>
+                    <p>No shared mood entries yet.</p>
+                    <p>Check "Share this mood with my team" when logging your mood to start sharing!</p>
+                </div>
+            `;
+            return;
+        }
+        
+        displayTeamFeed(teamFeedEntries);
+        
+    } catch (error) {
+        console.error('❌ Error loading team feed:', error);
+        teamFeedContent.innerHTML = '<div class="team-feed-empty">Error loading team feed. Please try again.</div>';
+    }
+}
+
+// Display team feed entries
+function displayTeamFeed(teamFeedEntries) {
+    // Sort entries by timestamp (newest first)
+    const sortedEntries = teamFeedEntries.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    
+    let feedHTML = '';
+    
+    sortedEntries.forEach((entry, index) => {
+        // Get user display name (fallback to userId if no displayName)
+        const userName = entry.displayName || entry.userId || 'Anonymous';
+        
+        feedHTML += `
+            <div class="team-feed-entry">
+                <div class="team-feed-header">
+                    <div class="team-feed-user">👤 ${userName}</div>
+                    <div class="team-feed-timestamp">${entry.timestamp}</div>
+                </div>
+                <div class="team-feed-mood">${entry.mood}</div>
+                ${entry.note ? `<div class="team-feed-note">"${entry.note}"</div>` : ''}
+            </div>
+        `;
+    });
+    
+    teamFeedContent.innerHTML = feedHTML;
+}
 
  

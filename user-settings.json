@@ -3,5 +3,7 @@
   "musicPlatform": "spotify",
   "dailyReminder": true,
   "calendarAutomation": true,
-  "lastUpdated": "2025-07-01T23:59:52.268Z"
+  "lastUpdated": "2025-07-01T23:59:52.268Z",
+  "teamName": "spotify",
+  "userId": "sabee"
 }
