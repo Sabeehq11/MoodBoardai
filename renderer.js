@@ -35,6 +35,10 @@ const sidebarOverlay = document.getElementById('sidebarOverlay');
 // Insights elements
 const insightsLoading = document.getElementById('insightsLoading');
 const weeklyChart = document.getElementById('weeklyChart');
+const teamMoodTrendCard = document.getElementById('teamMoodTrendCard');
+const teamMoodTrendChart = document.getElementById('teamMoodTrendChart');
+const teamMoodTrendLoading = document.getElementById('teamMoodTrendLoading');
+const teamMoodTrendInsight = document.getElementById('teamMoodTrendInsight');
 
 // Achievements elements
 const confettiContainer = document.getElementById('confettiContainer');
@@ -1199,6 +1203,28 @@ function getMoodValue(moodText) {
     return 3; // Default to neutral if emoji not found
 }
 
+// Team mood score mapping function - converts mood labels to scores for team analysis
+function getTeamMoodScore(moodText) {
+    // Extract mood name from full mood text (e.g., "😊 Happy" -> "Happy")
+    const moodName = moodText.replace(/^\S+\s+/, '').trim();
+    
+    // Team mood score mapping as per requirements
+    if (moodName === 'Happy') return 5;     // 😊 Happy: 5
+    if (moodName === 'Neutral') return 3;   // 🙂 Neutral: 3
+    if (moodName === 'Sad') return 2;       // 😔 Sad: 2
+    if (moodName === 'Tired') return 2;     // 😫 Tired: 2
+    if (moodName === 'Frustrated') return 1; // 😡 Frustrated: 1
+    
+    // Handle emoji-only patterns
+    if (moodText.includes("😊")) return 5; // Happy
+    if (moodText.includes("😐") || moodText.includes("🙂")) return 3; // Neutral
+    if (moodText.includes("😔")) return 2; // Sad
+    if (moodText.includes("😫")) return 2; // Tired
+    if (moodText.includes("😠") || moodText.includes("😡")) return 1; // Frustrated
+    
+    return 3; // Default to neutral if mood not recognized
+}
+
 // Get mood emoji from text
 function getMoodEmoji(moodText) {
     if (moodText.includes("😊")) return "😊";
@@ -2007,6 +2033,7 @@ async function initializeSettingsView() {
 
 // Global chart instances
 let weeklyChartInstance = null;
+let teamMoodTrendChartInstance = null;
 
 // Load and display insights
 async function loadInsights() {
@@ -2070,6 +2097,9 @@ function displayInsights(moodHistory) {
     
     // Load team insights
     loadTeamInsights();
+    
+    // Load team mood trend
+    loadTeamMoodTrend();
 }
 
 // Get most frequent mood
@@ -2292,6 +2322,248 @@ function createWeeklyChart(moodHistory) {
             cutout: '60%'
         }
     });
+}
+
+// Load and display team mood trend
+async function loadTeamMoodTrend() {
+    try {
+        // Get user team name first
+        const userTeamResult = await ipcRenderer.invoke('get-user-team');
+        
+        if (!userTeamResult.success || !userTeamResult.teamName) {
+            // Hide team mood trend card if no team
+            teamMoodTrendCard.style.display = 'none';
+            return;
+        }
+        
+        // Show the card and loading state
+        teamMoodTrendCard.style.display = 'block';
+        teamMoodTrendLoading.style.display = 'block';
+        
+        // Get team mood data for the past 7 days from teamFeed
+        const teamFeedData = await ipcRenderer.invoke('get-team-feed');
+        
+        // Filter for the past 7 days only
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        
+        const recentTeamMoods = teamFeedData.filter(entry => {
+            const entryDate = new Date(entry.timestamp);
+            return entryDate >= sevenDaysAgo;
+        });
+        
+        // Hide loading state
+        teamMoodTrendLoading.style.display = 'none';
+        
+        if (recentTeamMoods.length === 0) {
+            // Show no data message
+            teamMoodTrendInsight.innerHTML = `
+                <div style="text-align: center; color: #94a3b8; font-style: italic;">
+                    No team mood data available for the past 7 days.<br>
+                    Encourage your team to start sharing their moods!
+                </div>
+            `;
+            return;
+        }
+        
+        // Create team mood trend chart
+        createTeamMoodTrendChart(recentTeamMoods);
+        
+        // Generate dynamic insight
+        generateTeamMoodInsight(recentTeamMoods);
+        
+    } catch (error) {
+        console.error('Error loading team mood trend:', error);
+        teamMoodTrendLoading.style.display = 'none';
+        teamMoodTrendInsight.innerHTML = `
+            <div style="text-align: center; color: #ef4444; font-style: italic;">
+                Error loading team mood trends. Please try again later.
+            </div>
+        `;
+    }
+}
+
+// Create team mood trend chart
+function createTeamMoodTrendChart(teamMoodData) {
+    const ctx = teamMoodTrendChart.getContext('2d');
+    
+    // Destroy existing chart if it exists
+    if (teamMoodTrendChartInstance) {
+        teamMoodTrendChartInstance.destroy();
+    }
+    
+    // Group moods by day for the past 7 days
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const moodsByDay = {};
+    
+    // Initialize all days
+    days.forEach(day => {
+        moodsByDay[day] = [];
+    });
+    
+    // Group moods by day
+    teamMoodData.forEach(entry => {
+        const date = new Date(entry.timestamp);
+        const dayName = days[date.getDay()];
+        const moodScore = getTeamMoodScore(entry.mood);
+        moodsByDay[dayName].push(moodScore);
+    });
+    
+    // Calculate average mood score for each day
+    const chartData = days.map(day => {
+        const dayMoods = moodsByDay[day];
+        if (dayMoods.length === 0) return null; // No data for this day
+        return dayMoods.reduce((sum, score) => sum + score, 0) / dayMoods.length;
+    });
+    
+    // Create chart
+    teamMoodTrendChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: days,
+            datasets: [{
+                label: 'Average Team Mood',
+                data: chartData,
+                borderColor: '#4ecdc4',
+                backgroundColor: 'rgba(78, 205, 196, 0.1)',
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true,
+                pointBackgroundColor: '#4ecdc4',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 6,
+                pointHoverRadius: 8,
+                spanGaps: false // Don't connect points when there's no data
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.parsed.y;
+                            if (value === null) return 'No data';
+                            
+                            let moodText = 'Neutral';
+                            if (value >= 4.5) moodText = 'Very Happy';
+                            else if (value >= 3.5) moodText = 'Happy';
+                            else if (value >= 2.5) moodText = 'Neutral';
+                            else if (value >= 1.5) moodText = 'Sad/Tired';
+                            else moodText = 'Frustrated';
+                            
+                            return `${context.label}: ${moodText} (${value.toFixed(1)}/5)`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 5,
+                    ticks: {
+                        stepSize: 1,
+                        callback: function(value) {
+                            const moodLabels = ['😡', '😔', '😐', '😊', '😄'];
+                            return moodLabels[value - 1] || '';
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                x: {
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Generate dynamic team mood insight
+function generateTeamMoodInsight(teamMoodData) {
+    // Group moods by day and calculate averages
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dailyAverages = {};
+    
+    days.forEach(day => {
+        const dayMoods = teamMoodData.filter(entry => {
+            const date = new Date(entry.timestamp);
+            return days[date.getDay()] === day;
+        });
+        
+        if (dayMoods.length > 0) {
+            const avgScore = dayMoods.reduce((sum, entry) => sum + getTeamMoodScore(entry.mood), 0) / dayMoods.length;
+            dailyAverages[day] = avgScore;
+        }
+    });
+    
+    // Find highest and lowest mood days
+    const daysWithData = Object.entries(dailyAverages);
+    
+    if (daysWithData.length === 0) {
+        teamMoodTrendInsight.innerHTML = `
+            <div style="text-align: center; color: #94a3b8; font-style: italic;">
+                Not enough team mood data to generate insights.
+            </div>
+        `;
+        return;
+    }
+    
+    const highestDay = daysWithData.reduce((max, [day, score]) => 
+        score > max.score ? {day, score} : max, {day: '', score: 0}
+    );
+    
+    const lowestDay = daysWithData.reduce((min, [day, score]) => 
+        score < min.score ? {day, score} : min, {day: '', score: 5}
+    );
+    
+    // Calculate overall team mood trend
+    const overallAvg = daysWithData.reduce((sum, [_, score]) => sum + score, 0) / daysWithData.length;
+    
+    // Generate insight text
+    let insightText = '';
+    
+    if (highestDay.day && lowestDay.day && highestDay.day !== lowestDay.day) {
+        insightText = `Your team's mood was the <span class="team-mood-insight-highlight">most positive on ${highestDay.day}</span> `;
+        insightText += `and <span class="team-mood-insight-highlight">dipped on ${lowestDay.day}</span>. `;
+        
+        if (overallAvg >= 3.5) {
+            insightText += `Overall, your team had a great week! Keep up the positive energy and consider celebrating your collective success.`;
+        } else if (overallAvg >= 2.5) {
+            insightText += `Consider checking in with your teammates and planning some team-building activities to boost morale.`;
+        } else {
+            insightText += `It looks like your team had a challenging week. Consider having a team meeting to discuss workload and support each other.`;
+        }
+    } else if (daysWithData.length === 1) {
+        const [singleDay, score] = daysWithData[0];
+        if (score >= 3.5) {
+            insightText = `Your team shared positive moods on ${singleDay}! Encourage more regular mood sharing to build team awareness.`;
+        } else {
+            insightText = `Your team shared their mood on ${singleDay}. Regular check-ins can help build team support and collaboration.`;
+        }
+    } else {
+        if (overallAvg >= 3.5) {
+            insightText = `Your team maintained <span class="team-mood-insight-highlight">positive moods</span> throughout the week! Great teamwork and collaboration.`;
+        } else if (overallAvg >= 2.5) {
+            insightText = `Your team had a <span class="team-mood-insight-highlight">balanced week</span>. Consider team activities to boost collective energy.`;
+        } else {
+            insightText = `Your team faced some challenges this week. <span class="team-mood-insight-highlight">Consider scheduling a team check-in</span> to provide support.`;
+        }
+    }
+    
+    teamMoodTrendInsight.innerHTML = `
+        <div style="text-align: center;">
+            ${insightText}
+        </div>
+    `;
 }
 
 // Weekly Wellness Summary functionality

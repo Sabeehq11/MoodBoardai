@@ -2789,6 +2789,23 @@
             margin-top: 2px;
         }
 
+        /* Team Mood Trend Insight Styles */
+        .team-mood-insight {
+            margin-top: 20px;
+            padding: 16px;
+            background: linear-gradient(135deg, rgba(78, 205, 196, 0.1) 0%, rgba(255, 107, 157, 0.1) 100%);
+            border-radius: 12px;
+            border: 1px solid rgba(78, 205, 196, 0.2);
+            color: #e2e8f0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .team-mood-insight-highlight {
+            color: #4ecdc4;
+            font-weight: 600;
+        }
+
         /* Achievements styles */
         .achievement-section {
             margin-bottom: 40px;
@@ -3192,6 +3209,24 @@
                                 <canvas id="weeklyChart"></canvas>
                             </div>
                             <div class="insight-description">Your mood distribution this week</div>
+                        </div>
+                    </div>
+
+                    <!-- Team Mood Trend Card -->
+                    <div class="insight-card full-width" id="teamMoodTrendCard">
+                        <div class="insight-icon">📈</div>
+                        <div class="insight-content">
+                            <h3>Team Mood Trend</h3>
+                            <div class="insight-description">Average team mood shared each day (last 7 days)</div>
+                            <div class="chart-container-small">
+                                <canvas id="teamMoodTrendChart"></canvas>
+                            </div>
+                            <div id="teamMoodTrendLoading" style="text-align: center; color: #64748b; padding: 40px; display: none;">
+                                Loading team mood trends...
+                            </div>
+                            <div id="teamMoodTrendInsight" class="team-mood-insight">
+                                <!-- Dynamic insight will be populated here -->
+                            </div>
                         </div>
                     </div>
 
