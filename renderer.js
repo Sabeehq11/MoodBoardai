@@ -61,6 +61,14 @@ const welcomeMessage = document.getElementById('welcomeMessage');
 const quoteText = document.getElementById('quoteText');
 const quoteAuthor = document.getElementById('quoteAuthor');
 
+// Weekly Wellness Summary elements
+const wellnessLoading = document.getElementById('wellnessLoading');
+const wellnessData = document.getElementById('wellnessData');
+const noWeeklyData = document.getElementById('noWeeklyData');
+const moodFrequencyGrid = document.getElementById('moodFrequencyGrid');
+const weeklyWellnessChart = document.getElementById('weeklyWellnessChart');
+const wellnessReportContent = document.getElementById('wellnessReportContent');
+
 // Onboarding elements
 const onboardingOverlay = document.getElementById('onboardingOverlay');
 const skipOnboardingBtn = document.getElementById('skipOnboarding');
@@ -554,6 +562,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Apply default mood settings
     applyDefaultMoodOnLoad();
     
+    // Load Weekly Wellness Summary on initial load
+    setTimeout(() => {
+        loadWeeklyWellnessSummary();
+    }, 1000);
+    
     console.log('App initialization completed');
 });
 
@@ -775,6 +788,10 @@ async function displayAISuggestions(moodEntry, selectedMood, noteText) {
                 </div>
             `;
         }
+        
+        // Refresh Weekly Wellness Summary regardless of save success/failure
+        await loadWeeklyWellnessSummary();
+        
     } catch (error) {
         console.error('Error saving mood entry:', error);
         suggestionContent.innerHTML += `
@@ -782,6 +799,13 @@ async function displayAISuggestions(moodEntry, selectedMood, noteText) {
                 ⚠️ Unable to connect to Firestore. Please check your configuration.
             </div>
         `;
+        
+        // Try to refresh Weekly Wellness Summary even on error
+        try {
+            await loadWeeklyWellnessSummary();
+        } catch (wellnessError) {
+            console.error('Error refreshing weekly wellness summary:', wellnessError);
+        }
     }
 }
 
@@ -855,6 +879,9 @@ showFormButton.addEventListener('click', function() {
     
     // Update button states
     updateNavButtonStates('showForm');
+    
+    // Load Weekly Wellness Summary
+    loadWeeklyWellnessSummary();
 });
 
 showHistoryButton.addEventListener('click', async function() {
@@ -2114,4 +2141,279 @@ function createWeeklyChart(moodHistory) {
             cutout: '60%'
         }
     });
-} 
+}
+
+// Weekly Wellness Summary functionality
+async function loadWeeklyWellnessSummary() {
+    try {
+        // Show loading state
+        wellnessLoading.style.display = 'block';
+        wellnessData.style.display = 'none';
+        noWeeklyData.style.display = 'none';
+        
+        // Get mood history
+        const moodHistory = await ipcRenderer.invoke('get-mood-history');
+        
+        // Filter for past 7 days
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const weeklyMoods = moodHistory.filter(entry => {
+            const entryDate = new Date(entry.timestamp);
+            return entryDate >= sevenDaysAgo;
+        });
+        
+        // Hide loading state
+        wellnessLoading.style.display = 'none';
+        
+        if (weeklyMoods.length === 0) {
+            // Show no data message
+            noWeeklyData.style.display = 'block';
+            return;
+        }
+        
+        // Show data section
+        wellnessData.style.display = 'block';
+        
+        // Analyze and display data
+        displayMoodFrequency(weeklyMoods);
+        displayWeeklyTrendChart(weeklyMoods);
+        displayWellnessReport(weeklyMoods);
+        
+        console.log('Weekly Wellness Summary loaded successfully');
+        
+    } catch (error) {
+        console.error('Error loading Weekly Wellness Summary:', error);
+        wellnessLoading.style.display = 'none';
+        noWeeklyData.style.display = 'block';
+    }
+}
+
+// Display mood frequency analysis
+function displayMoodFrequency(weeklyMoods) {
+    // Count mood frequencies
+    const moodCounts = {};
+    weeklyMoods.forEach(entry => {
+        const moodName = entry.mood;
+        moodCounts[moodName] = (moodCounts[moodName] || 0) + 1;
+    });
+    
+    // Sort by frequency
+    const sortedMoods = Object.entries(moodCounts)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 5); // Show top 5 moods
+    
+    // Clear existing content
+    moodFrequencyGrid.innerHTML = '';
+    
+    // Find max count for percentage calculation
+    const maxCount = Math.max(...Object.values(moodCounts));
+    
+    // Create mood frequency items
+    sortedMoods.forEach(([moodName, count]) => {
+        const percentage = Math.round((count / weeklyMoods.length) * 100);
+        const barWidth = (count / maxCount) * 100;
+        
+        const moodItem = document.createElement('div');
+        moodItem.className = 'mood-frequency-item';
+        
+        const emoji = getMoodEmoji(moodName);
+        const simpleName = moodName.split(' ')[1] || moodName;
+        
+        moodItem.innerHTML = `
+            <div class="mood-emoji">${emoji}</div>
+            <div class="mood-info">
+                <div class="mood-name">${simpleName}</div>
+                <div class="mood-count">${count} ${count === 1 ? 'time' : 'times'}</div>
+            </div>
+            <div class="mood-bar-container">
+                <div class="mood-bar-fill" style="width: ${barWidth}%"></div>
+            </div>
+            <div class="mood-percentage">${percentage}%</div>
+        `;
+        
+        moodFrequencyGrid.appendChild(moodItem);
+    });
+}
+
+// Display weekly mood trend chart
+function displayWeeklyTrendChart(weeklyMoods) {
+    const ctx = weeklyWellnessChart.getContext('2d');
+    
+    // Destroy existing chart if it exists
+    if (window.weeklyWellnessChartInstance) {
+        window.weeklyWellnessChartInstance.destroy();
+    }
+    
+    // Group moods by day
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const moodsByDay = {};
+    
+    // Initialize all days
+    days.forEach(day => {
+        moodsByDay[day] = [];
+    });
+    
+    // Group moods by day
+    weeklyMoods.forEach(entry => {
+        const date = new Date(entry.timestamp);
+        const dayName = days[date.getDay()];
+        moodsByDay[dayName].push(getMoodValue(entry.mood));
+    });
+    
+    // Calculate average mood value for each day
+    const chartData = days.map(day => {
+        const dayMoods = moodsByDay[day];
+        if (dayMoods.length === 0) return null;
+        return dayMoods.reduce((sum, mood) => sum + mood, 0) / dayMoods.length;
+    });
+    
+    // Create chart
+    window.weeklyWellnessChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: days,
+            datasets: [{
+                label: 'Average Mood',
+                data: chartData,
+                borderColor: '#ff6b9d',
+                backgroundColor: 'rgba(255, 107, 157, 0.1)',
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true,
+                pointBackgroundColor: '#ff6b9d',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 6,
+                pointHoverRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.parsed.y;
+                            if (value === null) return 'No data';
+                            
+                            let moodText = 'Neutral';
+                            if (value >= 4) moodText = 'Very Positive';
+                            else if (value >= 3) moodText = 'Positive';
+                            else if (value >= 2) moodText = 'Neutral';
+                            else if (value >= 1) moodText = 'Negative';
+                            else moodText = 'Very Negative';
+                            
+                            return `${context.label}: ${moodText}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 5,
+                    ticks: {
+                        stepSize: 1,
+                        callback: function(value) {
+                            const moodLabels = ['😢', '😔', '😐', '😊', '😄'];
+                            return moodLabels[value - 1] || '';
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                x: {
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Display wellness report
+function displayWellnessReport(weeklyMoods) {
+    // Analyze dominant mood
+    const moodCounts = {};
+    weeklyMoods.forEach(entry => {
+        const moodName = entry.mood.split(' ')[1] || entry.mood;
+        moodCounts[moodName] = (moodCounts[moodName] || 0) + 1;
+    });
+    
+    const dominantMood = Object.entries(moodCounts)
+        .sort(([,a], [,b]) => b - a)[0];
+    
+    const [moodName, count] = dominantMood;
+    const percentage = Math.round((count / weeklyMoods.length) * 100);
+    
+    // Calculate average mood value
+    const avgMoodValue = weeklyMoods.reduce((sum, entry) => sum + getMoodValue(entry.mood), 0) / weeklyMoods.length;
+    
+    // Generate wellness report
+    let reportText = '';
+    let reportEmoji = '';
+    
+    if (moodName === 'Happy' || avgMoodValue >= 3.5) {
+        reportEmoji = '🌟';
+        reportText = `You've had a <span class="wellness-report-highlight">mostly positive week</span>! With ${percentage}% of your mood entries being ${moodName.toLowerCase()}, you're doing great. Keep up the good energy and consider sharing your positivity with others around you.`;
+    } else if (moodName === 'Sad' || moodName === 'Frustrated' || avgMoodValue <= 2.5) {
+        reportEmoji = '💙';
+        reportText = `This week seems to have been <span class="wellness-report-highlight">challenging</span> with ${percentage}% of your moods being ${moodName.toLowerCase()}. Remember that tough times don't last, but resilient people do. Try to take breaks, practice self-care, and focus on rest this weekend.`;
+    } else if (moodName === 'Tired' || moodName === 'Neutral') {
+        reportEmoji = '⚡';
+        reportText = `Your week has been <span class="wellness-report-highlight">fairly balanced</span> with ${percentage}% of your entries being ${moodName.toLowerCase()}. This might be a good time to focus on activities that energize you and bring more joy into your routine.`;
+    } else {
+        reportEmoji = '🎭';
+        reportText = `You've experienced a <span class="wellness-report-highlight">variety of moods</span> this week, which is completely normal! Your emotional awareness through mood tracking is already a great step toward better mental wellness.`;
+    }
+    
+    // Additional insights
+    const uniqueDays = new Set(weeklyMoods.map(entry => new Date(entry.timestamp).toDateString())).size;
+    const avgEntriesPerDay = weeklyMoods.length / uniqueDays;
+    
+    let consistencyText = '';
+    if (avgEntriesPerDay >= 2) {
+        consistencyText = ' You\'ve been <span class="wellness-report-highlight">very consistent</span> with your mood tracking this week!';
+    } else if (uniqueDays >= 5) {
+        consistencyText = ' Great job staying <span class="wellness-report-highlight">consistent</span> with your mood tracking!';
+    } else if (uniqueDays >= 3) {
+        consistencyText = ' Try to log your mood more regularly to get better insights.';
+    }
+    
+    // Display report
+    wellnessReportContent.innerHTML = `
+        <div class="wellness-report-text">
+            <span class="wellness-report-emoji">${reportEmoji}</span>
+            ${reportText}${consistencyText}
+        </div>
+    `;
+}
+
+// Initialize Weekly Wellness Summary when the mood entry view is shown
+const originalShowFormHandler = showFormButton.onclick;
+showFormButton.addEventListener('click', function() {
+    // Call original handler
+    if (originalShowFormHandler) originalShowFormHandler();
+    
+    // Switch to mood entry view
+    moodEntryView.style.display = 'block';
+    moodEntryView.style.opacity = '1';
+    historyView.style.display = 'none';
+    trendsView.style.display = 'none';
+    insightsView.style.display = 'none';
+    achievementsView.style.display = 'none';
+    settingsView.style.display = 'none';
+    
+    // Update button states
+    updateNavButtonStates('showForm');
+    
+    // Load Weekly Wellness Summary
+    loadWeeklyWellnessSummary();
+});
+
+ 
