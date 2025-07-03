@@ -562,9 +562,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Apply default mood settings
     applyDefaultMoodOnLoad();
     
-    // Load Weekly Wellness Summary on initial load
+    // Check and auto-generate weekly report on app launch
     setTimeout(() => {
-        loadWeeklyWellnessSummary();
+        checkAndGenerateWeeklyReportOnLaunch();
     }, 1000);
     
     console.log('App initialization completed');
@@ -790,7 +790,7 @@ async function displayAISuggestions(moodEntry, selectedMood, noteText) {
         }
         
         // Refresh Weekly Wellness Summary regardless of save success/failure
-        await loadWeeklyWellnessSummary();
+        await generateWeeklyReport();
         
     } catch (error) {
         console.error('Error saving mood entry:', error);
@@ -802,7 +802,7 @@ async function displayAISuggestions(moodEntry, selectedMood, noteText) {
         
         // Try to refresh Weekly Wellness Summary even on error
         try {
-            await loadWeeklyWellnessSummary();
+            await generateWeeklyReport();
         } catch (wellnessError) {
             console.error('Error refreshing weekly wellness summary:', wellnessError);
         }
@@ -881,7 +881,7 @@ showFormButton.addEventListener('click', function() {
     updateNavButtonStates('showForm');
     
     // Load Weekly Wellness Summary
-    loadWeeklyWellnessSummary();
+    generateWeeklyReport();
 });
 
 showHistoryButton.addEventListener('click', async function() {
@@ -2187,6 +2187,99 @@ async function loadWeeklyWellnessSummary() {
     }
 }
 
+// Weekly Wellness Report - core functionality (renamed from loadWeeklyWellnessSummary)
+async function generateWeeklyReport() {
+    try {
+        // Show loading state
+        wellnessLoading.style.display = 'block';
+        wellnessData.style.display = 'none';
+        noWeeklyData.style.display = 'none';
+        
+        // Get mood history
+        const moodHistory = await ipcRenderer.invoke('get-mood-history');
+        
+        // Filter for past 7 days
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const weeklyMoods = moodHistory.filter(entry => {
+            const entryDate = new Date(entry.timestamp);
+            return entryDate >= sevenDaysAgo;
+        });
+        
+        // Hide loading state
+        wellnessLoading.style.display = 'none';
+        
+        if (weeklyMoods.length === 0) {
+            // Show no data message
+            noWeeklyData.style.display = 'block';
+            return;
+        }
+        
+        // Show data section
+        wellnessData.style.display = 'block';
+        
+        // Analyze and display data
+        displayMoodFrequency(weeklyMoods);
+        displayWeeklyTrendChart(weeklyMoods);
+        displayWellnessReport(weeklyMoods);
+        
+        // Save the timestamp of this report generation
+        saveLastWeeklyReportTimestamp();
+        
+        console.log('Weekly Wellness Report generated successfully');
+        
+    } catch (error) {
+        console.error('Error generating Weekly Wellness Report:', error);
+        wellnessLoading.style.display = 'none';
+        noWeeklyData.style.display = 'block';
+    }
+}
+
+// Check if 7 days have passed since last weekly report
+function shouldGenerateWeeklyReport() {
+    const lastReportTimestamp = localStorage.getItem('lastWeeklyReportTimestamp');
+    
+    if (!lastReportTimestamp) {
+        console.log('📊 No previous weekly report found - should generate first report');
+        return true;
+    }
+    
+    const lastReportDate = new Date(lastReportTimestamp);
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    
+    const shouldGenerate = lastReportDate < sevenDaysAgo;
+    
+    if (shouldGenerate) {
+        console.log('📊 7 days have passed since last weekly report - should generate new report');
+    } else {
+        console.log('📊 Weekly report was generated recently - no need to generate new report');
+    }
+    
+    return shouldGenerate;
+}
+
+// Save the timestamp of the last weekly report generation
+function saveLastWeeklyReportTimestamp() {
+    const currentTimestamp = new Date().toISOString();
+    localStorage.setItem('lastWeeklyReportTimestamp', currentTimestamp);
+    console.log('📊 Weekly report timestamp saved:', currentTimestamp);
+}
+
+// Auto-generate weekly report on app launch (if needed)
+async function checkAndGenerateWeeklyReportOnLaunch() {
+    console.log('📊 Checking if weekly report should be auto-generated on app launch...');
+    
+    if (shouldGenerateWeeklyReport()) {
+        console.log('📊 Auto-generating weekly report on app launch...');
+        await generateWeeklyReport();
+    }
+}
+
+// Manual weekly report generation (triggered by button)
+async function manualGenerateWeeklyReport() {
+    console.log('📊 Manual weekly report generation requested');
+    await generateWeeklyReport();
+}
+
 // Display mood frequency analysis
 function displayMoodFrequency(weeklyMoods) {
     // Count mood frequencies
@@ -2413,7 +2506,7 @@ showFormButton.addEventListener('click', function() {
     updateNavButtonStates('showForm');
     
     // Load Weekly Wellness Summary
-    loadWeeklyWellnessSummary();
+    generateWeeklyReport();
 });
 
  

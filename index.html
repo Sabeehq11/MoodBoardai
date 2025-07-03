@@ -1483,6 +1483,52 @@
             overflow: hidden;
         }
 
+        .wellness-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .wellness-header h3 {
+            margin: 0;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .manual-report-btn {
+            background: linear-gradient(145deg, #ff6b9d, #4ecdc4);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
+            white-space: nowrap;
+        }
+
+        .manual-report-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(255, 107, 157, 0.4);
+            background: linear-gradient(145deg, #ff5a8a, #3bb3a8);
+        }
+
+        .manual-report-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(255, 107, 157, 0.3);
+        }
+
+        .manual-report-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .weekly-wellness-summary::before {
             content: '';
             position: absolute;
@@ -1681,6 +1727,23 @@
 
         /* Responsive design for Weekly Wellness Summary */
         @media (max-width: 768px) {
+            .wellness-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 16px;
+            }
+            
+            .wellness-header h3 {
+                text-align: center;
+                min-width: auto;
+            }
+            
+            .manual-report-btn {
+                font-size: 1em;
+                padding: 14px 24px;
+                align-self: center;
+            }
+            
             .mood-frequency-item {
                 flex-direction: column;
                 text-align: center;
@@ -2728,7 +2791,12 @@
 
                     <!-- Weekly Wellness Summary Section -->
                     <div class="card weekly-wellness-summary">
-                        <h3>📊 Weekly Wellness Summary</h3>
+                        <div class="wellness-header">
+                            <h3>📊 Weekly Wellness Summary</h3>
+                            <button id="manualReportBtn" class="manual-report-btn" onclick="manualGenerateWeeklyReport()">
+                                🧪 Generate Weekly Report Now
+                            </button>
+                        </div>
                         <div class="wellness-content">
                             <div class="wellness-loading" id="wellnessLoading">
                                 <div class="loading-spinner"></div>
