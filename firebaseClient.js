@@ -187,6 +187,84 @@ async function getMoodHistoryFromFirestore() {
   }
 }
 
+// Save automation rule to Firestore
+async function saveAutomationRuleToFirestore(automationRule) {
+  if (!isFirebaseConnected || !db) {
+    console.log('⚠️ Firebase: Not connected, skipping automation rule save');
+    return { success: false, reason: 'not_connected' };
+  }
+
+  try {
+    const docRef = await db.collection('automationRules').add({
+      ...automationRule,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+    
+    console.log('✅ Firebase: Automation rule saved to Firestore with ID:', docRef.id);
+    return { success: true, id: docRef.id };
+    
+  } catch (error) {
+    console.error('❌ Firebase: Failed to save automation rule:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+// Get automation rules from Firestore
+async function getAutomationRulesFromFirestore() {
+  if (!isFirebaseConnected || !db) {
+    console.log('⚠️ Firebase: Not connected, skipping automation rules retrieval');
+    return { success: false, reason: 'not_connected', data: [] };
+  }
+
+  try {
+    const snapshot = await db.collection('automationRules')
+      .where('isActive', '==', true)
+      .orderBy('createdAt', 'desc')
+      .get();
+    
+    const automationRules = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      automationRules.push({
+        id: doc.id,
+        ...data,
+        // Convert Firestore timestamp to ISO string if needed
+        createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString()
+      });
+    });
+    
+    console.log('✅ Firebase: Retrieved', automationRules.length, 'automation rules from Firestore');
+    return { success: true, data: automationRules };
+    
+  } catch (error) {
+    console.error('❌ Firebase: Failed to retrieve automation rules:', error.message);
+    return { success: false, error: error.message, data: [] };
+  }
+}
+
+// Delete automation rule from Firestore
+async function deleteAutomationRuleFromFirestore(ruleId) {
+  if (!isFirebaseConnected || !db) {
+    console.log('⚠️ Firebase: Not connected, skipping automation rule deletion');
+    return { success: false, reason: 'not_connected' };
+  }
+
+  try {
+    await db.collection('automationRules').doc(ruleId).update({
+      isActive: false,
+      updatedAt: new Date()
+    });
+    
+    console.log('✅ Firebase: Automation rule deactivated with ID:', ruleId);
+    return { success: true, id: ruleId };
+    
+  } catch (error) {
+    console.error('❌ Firebase: Failed to deactivate automation rule:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
 // Initialize Firebase when module loads
 initializeFirebase();
 
@@ -195,5 +273,8 @@ export {
   testFirebaseConnection,
   saveMoodEntryToFirestore,
   getMoodHistoryFromFirestore,
+  saveAutomationRuleToFirestore,
+  getAutomationRulesFromFirestore,
+  deleteAutomationRuleFromFirestore,
   isFirebaseConnected
 }; 

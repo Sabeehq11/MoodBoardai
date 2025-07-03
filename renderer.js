@@ -2,6 +2,7 @@
 const moodForm = document.getElementById('moodForm');
 const moodSelect = document.getElementById('moodSelect');
 const moodNote = document.getElementById('moodNote');
+const automationRule = document.getElementById('automationRule');
 const suggestionsDiv = document.getElementById('suggestions');
 const suggestionContent = document.getElementById('suggestionContent');
 
@@ -571,17 +572,48 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Handle form submission
-moodForm.addEventListener('submit', function(event) {
+moodForm.addEventListener('submit', async function(event) {
     event.preventDefault(); // Prevent page refresh
     
     // Get form values
     const selectedMood = moodSelect.value;
     const noteText = moodNote.value.trim();
+    const automationRuleText = automationRule.value.trim();
     
     // Validate mood selection
     if (!selectedMood) {
         alert('Please select a mood first!');
         return;
+    }
+    
+    // Handle automation rule if provided
+    if (automationRuleText) {
+        const validation = validateAutomationRule(automationRuleText);
+        if (!validation.success) {
+            alert(`Automation Rule Error: ${validation.error}`);
+            return;
+        }
+        
+        // Save the automation rule
+        try {
+            const saveResult = await ipcRenderer.invoke('save-automation-rule', validation.rule);
+            if (saveResult.success) {
+                console.log('✅ Automation rule saved successfully:', validation.rule.originalText);
+                
+                // Clear the automation rule input after successful save
+                automationRule.value = '';
+                
+                // Show success feedback
+                automationRule.style.borderColor = '#4CAF50';
+                setTimeout(() => {
+                    automationRule.style.borderColor = '';
+                }, 2000);
+            } else {
+                console.error('❌ Failed to save automation rule:', saveResult.error);
+            }
+        } catch (error) {
+            console.error('❌ Error saving automation rule:', error);
+        }
     }
     
     // Combine mood and note into a single string
@@ -593,7 +625,7 @@ moodForm.addEventListener('submit', function(event) {
     // Log to console as requested
     console.log('Mood Entry:', moodEntry);
     
-    // Show AI suggestions (async call)
+    // Show AI suggestions (async call) and check for automation rules
     displayAISuggestions(moodEntry, selectedMood, noteText);
     
     // Optional: Clear the form after submission
@@ -659,6 +691,14 @@ async function displayAISuggestions(moodEntry, selectedMood, noteText) {
                 console.log('📅 No calendar mapping for mood:', selectedMood);
             } else if (result.calendar?.error) {
                 console.log('📅 Calendar automation error:', result.calendar.error);
+            }
+            
+            // Check and execute automation rules
+            console.log('🤖 Checking automation rules for mood:', selectedMood);
+            try {
+                await checkAndExecuteAutomationRules(moodEntryObject);
+            } catch (automationError) {
+                console.error('❌ Automation rules error:', automationError);
             }
             
             // Call LangGraph flow for additional analysis
@@ -806,6 +846,76 @@ async function displayAISuggestions(moodEntry, selectedMood, noteText) {
         } catch (wellnessError) {
             console.error('Error refreshing weekly wellness summary:', wellnessError);
         }
+    }
+}
+
+// Check and execute automation rules for the current mood
+async function checkAndExecuteAutomationRules(moodEntry) {
+    try {
+        // Get all active automation rules
+        const automationRules = await ipcRenderer.invoke('get-automation-rules');
+        
+        if (!automationRules || automationRules.length === 0) {
+            console.log('🤖 No automation rules found');
+            return;
+        }
+        
+        console.log(`🤖 Found ${automationRules.length} automation rules to check`);
+        
+        let executedRules = [];
+        
+        // Check each rule against the current mood
+        for (const rule of automationRules) {
+            if (moodMatches(moodEntry.mood, rule.mood)) {
+                console.log(`🎯 Automation rule matched: "${rule.originalText}"`);
+                
+                try {
+                    const result = await executeAutomationAction(rule, moodEntry);
+                    if (result.success) {
+                        executedRules.push({
+                            rule: rule,
+                            result: result
+                        });
+                        console.log(`✅ Automation action executed: ${result.message}`);
+                    } else {
+                        console.error(`❌ Automation action failed: ${result.error}`);
+                    }
+                } catch (execError) {
+                    console.error(`❌ Error executing automation rule "${rule.originalText}":`, execError);
+                }
+            }
+        }
+        
+        // Show feedback for executed rules
+        if (executedRules.length > 0) {
+            let automationFeedback = `
+                <div style="margin-top: 16px; padding: 12px; background: rgba(106, 90, 205, 0.1); border-radius: 8px; color: #b794f6; border: 1px solid rgba(106, 90, 205, 0.2);">
+                    <strong>🤖 Automation Rules Executed:</strong><br/>
+            `;
+            
+            executedRules.forEach(({rule, result}) => {
+                automationFeedback += `
+                    <div style="margin-top: 8px; padding: 8px; background: rgba(106, 90, 205, 0.05); border-radius: 6px;">
+                        <strong>Rule:</strong> "${rule.originalText}"<br/>
+                        <strong>Action:</strong> ${result.message}
+                    </div>
+                `;
+            });
+            
+            automationFeedback += `
+                    <br/>
+                    <small style="color: #9f7aea;">✨ Your automated responses are working!</small>
+                </div>
+            `;
+            
+            // Add to suggestions display
+            suggestionContent.innerHTML += automationFeedback;
+        } else {
+            console.log('🤖 No automation rules matched the current mood');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error checking automation rules:', error);
     }
 }
 

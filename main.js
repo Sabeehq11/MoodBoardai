@@ -5,6 +5,9 @@ import { fileURLToPath } from 'url';
 import { 
   saveMoodEntryToFirestore, 
   getMoodHistoryFromFirestore,
+  saveAutomationRuleToFirestore,
+  getAutomationRulesFromFirestore,
+  deleteAutomationRuleFromFirestore,
   isFirebaseConnected 
 } from './firebaseClient.js';
 import { runMoodAnalysisFlow } from './langgraphFlow.js';
@@ -275,6 +278,140 @@ ipcMain.handle('get-spotify-recommendations', async (event, moodText) => {
       error: error.message
     };
   }
+});
+
+// Handle automation rule saving to Firebase with local fallback
+ipcMain.handle('save-automation-rule', async (event, automationRule) => {
+  console.log('save-automation-rule handler called');
+  
+  let localResult = { success: false };
+  let firebaseResult = { success: false };
+  
+  // Always save to local file (fallback)
+  try {
+    const rulesFile = path.join(__dirname, 'automation-rules.json');
+    
+    // Read existing rules
+    let automationRules = [];
+    if (fs.existsSync(rulesFile)) {
+      const data = fs.readFileSync(rulesFile, 'utf8');
+      automationRules = JSON.parse(data);
+    }
+    
+    // Add new rule
+    automationRules.push(automationRule);
+    
+    // Write back to file
+    fs.writeFileSync(rulesFile, JSON.stringify(automationRules, null, 2));
+    
+    localResult = { success: true, id: automationRule.id };
+    console.log('✅ Local: Automation rule saved successfully:', automationRule.originalText);
+  } catch (error) {
+    console.error('❌ Local: Error saving automation rule:', error);
+    localResult = { success: false, error: error.message };
+  }
+  
+  // Try to save to Firebase (if connected)
+  try {
+    firebaseResult = await saveAutomationRuleToFirestore(automationRule);
+  } catch (error) {
+    console.error('❌ Firebase: Error saving automation rule:', error);
+    firebaseResult = { success: false, error: error.message };
+  }
+  
+  return {
+    success: localResult.success || firebaseResult.success,
+    local: localResult,
+    firebase: firebaseResult,
+    id: localResult.id || firebaseResult.id
+  };
+});
+
+// Handle automation rules retrieval from Firebase with local fallback
+ipcMain.handle('get-automation-rules', async () => {
+  console.log('get-automation-rules handler called - trying Firebase first, then local fallback');
+  
+  // Try Firebase first (if connected)
+  if (isFirebaseConnected) {
+    try {
+      const firebaseResult = await getAutomationRulesFromFirestore();
+      if (firebaseResult.success && firebaseResult.data.length > 0) {
+        console.log('✅ Firebase: Successfully loaded automation rules:', firebaseResult.data.length, 'rules');
+        return firebaseResult.data;
+      }
+    } catch (error) {
+      console.error('❌ Firebase: Error reading automation rules:', error);
+    }
+  }
+  
+  // Fallback to local file
+  try {
+    const rulesFile = path.join(__dirname, 'automation-rules.json');
+    
+    if (!fs.existsSync(rulesFile)) {
+      console.log('📝 Local: No automation rules file found, returning empty array');
+      return [];
+    }
+    
+    const data = fs.readFileSync(rulesFile, 'utf8');
+    const automationRules = JSON.parse(data);
+    
+    // Filter active rules
+    const activeRules = automationRules.filter(rule => rule.isActive !== false);
+    
+    console.log('✅ Local: Successfully loaded automation rules from local file:', activeRules.length, 'active rules');
+    return activeRules;
+  } catch (error) {
+    console.error('❌ Local: Error reading automation rules from local file:', error);
+    return [];
+  }
+});
+
+// Handle automation rule deletion
+ipcMain.handle('delete-automation-rule', async (event, ruleId) => {
+  console.log('delete-automation-rule handler called for rule:', ruleId);
+  
+  let localResult = { success: false };
+  let firebaseResult = { success: false };
+  
+  // Update local file
+  try {
+    const rulesFile = path.join(__dirname, 'automation-rules.json');
+    
+    if (fs.existsSync(rulesFile)) {
+      const data = fs.readFileSync(rulesFile, 'utf8');
+      let automationRules = JSON.parse(data);
+      
+      // Mark rule as inactive instead of deleting
+      automationRules = automationRules.map(rule => 
+        rule.id === ruleId ? { ...rule, isActive: false } : rule
+      );
+      
+      // Write back to file
+      fs.writeFileSync(rulesFile, JSON.stringify(automationRules, null, 2));
+      
+      localResult = { success: true, id: ruleId };
+      console.log('✅ Local: Automation rule deactivated successfully:', ruleId);
+    }
+  } catch (error) {
+    console.error('❌ Local: Error deactivating automation rule:', error);
+    localResult = { success: false, error: error.message };
+  }
+  
+  // Try to update Firebase (if connected)
+  try {
+    firebaseResult = await deleteAutomationRuleFromFirestore(ruleId);
+  } catch (error) {
+    console.error('❌ Firebase: Error deactivating automation rule:', error);
+    firebaseResult = { success: false, error: error.message };
+  }
+  
+  return {
+    success: localResult.success || firebaseResult.success,
+    local: localResult,
+    firebase: firebaseResult,
+    id: ruleId
+  };
 });
 
 // This method will be called when Electron has finished initialization
