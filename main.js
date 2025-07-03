@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import { fileURLToPath } from 'url';
 import { 
   saveMoodEntryToFirestore, 
@@ -8,6 +9,9 @@ import {
   saveAutomationRuleToFirestore,
   getAutomationRulesFromFirestore,
   deleteAutomationRuleFromFirestore,
+  saveUserTeamToFirestore,
+  getUserTeamFromFirestore,
+  getTeamMoodDataFromFirestore,
   isFirebaseConnected 
 } from './firebaseClient.js';
 import { runMoodAnalysisFlow } from './langgraphFlow.js';
@@ -49,6 +53,15 @@ ipcMain.handle('log-mood-entry', async (event, moodEntryObject) => {
   let firebaseResult = { success: false };
   let calendarResult = { success: false };
 
+  // Generate a simple userId based on system username for team functionality
+  const userId = os.userInfo().username || 'anonymous';
+  
+  // Add userId to mood entry for team tracking
+  const moodEntryWithUserId = {
+    ...moodEntryObject,
+    userId: userId
+  };
+
   // Always save to local file (fallback)
   try {
     const moodHistoryFile = path.join(__dirname, 'mood-history.json');
@@ -61,13 +74,13 @@ ipcMain.handle('log-mood-entry', async (event, moodEntryObject) => {
     }
     
     // Add new entry
-    moodHistory.push(moodEntryObject);
+    moodHistory.push(moodEntryWithUserId);
     
     // Write back to file
     fs.writeFileSync(moodHistoryFile, JSON.stringify(moodHistory, null, 2));
     
-    localResult = { success: true, id: moodEntryObject.timestamp };
-    console.log('✅ Local: Mood entry logged successfully:', moodEntryObject.mood, '-', moodEntryObject.timestamp);
+    localResult = { success: true, id: moodEntryWithUserId.timestamp };
+    console.log('✅ Local: Mood entry logged successfully:', moodEntryWithUserId.mood, '-', moodEntryWithUserId.timestamp);
   } catch (error) {
     console.error('❌ Local: Error logging mood entry:', error);
     localResult = { success: false, error: error.message };
@@ -75,7 +88,7 @@ ipcMain.handle('log-mood-entry', async (event, moodEntryObject) => {
 
   // Try to save to Firebase (if connected)
   try {
-    firebaseResult = await saveMoodEntryToFirestore(moodEntryObject);
+    firebaseResult = await saveMoodEntryToFirestore(moodEntryWithUserId);
   } catch (error) {
     console.error('❌ Firebase: Error logging mood entry:', error);
     firebaseResult = { success: false, error: error.message };
@@ -93,7 +106,7 @@ ipcMain.handle('log-mood-entry', async (event, moodEntryObject) => {
     }
     
     // Process calendar automation
-    calendarResult = await processCalendarAutomation(moodEntryObject, userSettings);
+    calendarResult = await processCalendarAutomation(moodEntryWithUserId, userSettings);
     
   } catch (error) {
     console.error('❌ Calendar: Error processing calendar automation:', error);
@@ -412,6 +425,121 @@ ipcMain.handle('delete-automation-rule', async (event, ruleId) => {
     firebase: firebaseResult,
     id: ruleId
   };
+});
+
+// Handle saving user team name
+ipcMain.handle('save-user-team', async (event, teamName) => {
+  console.log('save-user-team handler called for team:', teamName);
+  
+  const userId = os.userInfo().username || 'anonymous';
+  
+  let localResult = { success: false };
+  let firebaseResult = { success: false };
+  
+  // Save to local file (fallback)
+  try {
+    const userSettingsFile = path.join(__dirname, 'user-settings.json');
+    
+    let userSettings = {};
+    if (fs.existsSync(userSettingsFile)) {
+      const data = fs.readFileSync(userSettingsFile, 'utf8');
+      userSettings = JSON.parse(data);
+    }
+    
+    // Add team name to user settings
+    userSettings.teamName = teamName;
+    userSettings.userId = userId;
+    
+    // Write back to file
+    fs.writeFileSync(userSettingsFile, JSON.stringify(userSettings, null, 2));
+    
+    localResult = { success: true, userId, teamName };
+    console.log('✅ Local: User team saved successfully:', teamName);
+  } catch (error) {
+    console.error('❌ Local: Error saving user team:', error);
+    localResult = { success: false, error: error.message };
+  }
+  
+  // Try to save to Firebase (if connected)
+  try {
+    firebaseResult = await saveUserTeamToFirestore(userId, teamName);
+  } catch (error) {
+    console.error('❌ Firebase: Error saving user team:', error);
+    firebaseResult = { success: false, error: error.message };
+  }
+  
+  return {
+    success: localResult.success || firebaseResult.success,
+    local: localResult,
+    firebase: firebaseResult,
+    userId,
+    teamName
+  };
+});
+
+// Handle getting user team name
+ipcMain.handle('get-user-team', async () => {
+  console.log('get-user-team handler called');
+  
+  const userId = os.userInfo().username || 'anonymous';
+  
+  // Try Firebase first (if connected)
+  if (isFirebaseConnected) {
+    try {
+      const firebaseResult = await getUserTeamFromFirestore(userId);
+      if (firebaseResult.success && firebaseResult.teamName) {
+        console.log('✅ Firebase: User team retrieved:', firebaseResult.teamName);
+        return { success: true, teamName: firebaseResult.teamName, userId };
+      }
+    } catch (error) {
+      console.error('❌ Firebase: Error retrieving user team:', error);
+    }
+  }
+  
+  // Fallback to local file
+  try {
+    const userSettingsFile = path.join(__dirname, 'user-settings.json');
+    
+    if (!fs.existsSync(userSettingsFile)) {
+      console.log('📝 Local: No user settings file found');
+      return { success: true, teamName: null, userId };
+    }
+    
+    const data = fs.readFileSync(userSettingsFile, 'utf8');
+    const userSettings = JSON.parse(data);
+    
+    console.log('✅ Local: User team retrieved from local file:', userSettings.teamName);
+    return { success: true, teamName: userSettings.teamName || null, userId };
+  } catch (error) {
+    console.error('❌ Local: Error reading user team from local file:', error);
+    return { success: false, error: error.message, teamName: null, userId };
+  }
+});
+
+// Handle getting team mood data
+ipcMain.handle('get-team-mood-data', async (event, teamName) => {
+  console.log('get-team-mood-data handler called for team:', teamName);
+  
+  if (!teamName) {
+    return { success: false, error: 'No team name provided', data: [] };
+  }
+  
+  // Try Firebase first (if connected)
+  if (isFirebaseConnected) {
+    try {
+      const firebaseResult = await getTeamMoodDataFromFirestore(teamName);
+      if (firebaseResult.success) {
+        console.log('✅ Firebase: Team mood data retrieved:', firebaseResult.data.length, 'entries');
+        return { success: true, data: firebaseResult.data };
+      }
+    } catch (error) {
+      console.error('❌ Firebase: Error retrieving team mood data:', error);
+    }
+  }
+  
+  // Fallback: return empty data (team collaboration requires Firebase)
+  console.log('⚠️ Team mood data requires Firebase connection');
+  return { success: false, error: 'Team collaboration requires Firebase connection', data: [] };
 });
 
 // This method will be called when Electron has finished initialization

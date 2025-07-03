@@ -265,6 +265,110 @@ async function deleteAutomationRuleFromFirestore(ruleId) {
   }
 }
 
+// Save user team name to Firestore
+async function saveUserTeamToFirestore(userId, teamName) {
+  if (!isFirebaseConnected || !db) {
+    console.log('⚠️ Firebase: Not connected, skipping team save');
+    return { success: false, reason: 'not_connected' };
+  }
+
+  try {
+    await db.collection('users').doc(userId).set({
+      teamName: teamName,
+      updatedAt: new Date()
+    }, { merge: true });
+    
+    console.log('✅ Firebase: User team saved for user:', userId, 'team:', teamName);
+    return { success: true, userId, teamName };
+    
+  } catch (error) {
+    console.error('❌ Firebase: Failed to save user team:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+// Get user team name from Firestore
+async function getUserTeamFromFirestore(userId) {
+  if (!isFirebaseConnected || !db) {
+    console.log('⚠️ Firebase: Not connected, skipping team retrieval');
+    return { success: false, reason: 'not_connected', teamName: null };
+  }
+
+  try {
+    const doc = await db.collection('users').doc(userId).get();
+    
+    if (doc.exists) {
+      const data = doc.data();
+      console.log('✅ Firebase: User team retrieved for user:', userId, 'team:', data.teamName);
+      return { success: true, teamName: data.teamName || null };
+    } else {
+      console.log('📝 Firebase: No team found for user:', userId);
+      return { success: true, teamName: null };
+    }
+    
+  } catch (error) {
+    console.error('❌ Firebase: Failed to retrieve user team:', error.message);
+    return { success: false, error: error.message, teamName: null };
+  }
+}
+
+// Get team mood data from Firestore for the past 7 days
+async function getTeamMoodDataFromFirestore(teamName) {
+  if (!isFirebaseConnected || !db) {
+    console.log('⚠️ Firebase: Not connected, skipping team mood data retrieval');
+    return { success: false, reason: 'not_connected', data: [] };
+  }
+
+  try {
+    // Get all users in the team
+    const usersSnapshot = await db.collection('users')
+      .where('teamName', '==', teamName)
+      .get();
+    
+    if (usersSnapshot.empty) {
+      console.log('📝 Firebase: No users found in team:', teamName);
+      return { success: true, data: [] };
+    }
+
+    const userIds = [];
+    usersSnapshot.forEach(doc => {
+      userIds.push(doc.id);
+    });
+
+    // Get mood entries from the past 7 days for all team members
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const moodEntries = [];
+    
+    // Query mood entries for each user (Firestore doesn't support OR queries on different fields)
+    for (const userId of userIds) {
+      const moodSnapshot = await db.collection('mood_entries')
+        .where('userId', '==', userId)
+        .where('createdAt', '>=', sevenDaysAgo)
+        .orderBy('createdAt', 'desc')
+        .get();
+      
+      moodSnapshot.forEach(doc => {
+        const data = doc.data();
+        moodEntries.push({
+          id: doc.id,
+          ...data,
+          userId: userId,
+          timestamp: data.timestamp || data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString()
+        });
+      });
+    }
+    
+    console.log('✅ Firebase: Retrieved', moodEntries.length, 'team mood entries for team:', teamName);
+    return { success: true, data: moodEntries };
+    
+  } catch (error) {
+    console.error('❌ Firebase: Failed to retrieve team mood data:', error.message);
+    return { success: false, error: error.message, data: [] };
+  }
+}
+
 // Initialize Firebase when module loads
 initializeFirebase();
 
@@ -276,5 +380,8 @@ export {
   saveAutomationRuleToFirestore,
   getAutomationRulesFromFirestore,
   deleteAutomationRuleFromFirestore,
+  saveUserTeamToFirestore,
+  getUserTeamFromFirestore,
+  getTeamMoodDataFromFirestore,
   isFirebaseConnected
 }; 

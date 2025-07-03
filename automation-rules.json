@@ -1,0 +1,13 @@
+[
+  {
+    "id": "rule_1751516272230_1b8e6rqll",
+    "originalText": "When I'm sad, send me motivational quotes",
+    "mood": "happy",
+    "action": "Send me motivational quotes",
+    "time": "now",
+    "actionType": "send_message",
+    "content": "motivational quotes",
+    "createdAt": "2025-07-03T04:17:52.230Z",
+    "isActive": true
+  }
+]

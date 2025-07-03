@@ -2029,6 +2029,9 @@ function displayInsights(moodHistory) {
     
     // Create weekly mood breakdown chart
     createWeeklyChart(moodHistory);
+    
+    // Load team insights
+    loadTeamInsights();
 }
 
 // Get most frequent mood
@@ -2618,5 +2621,229 @@ showFormButton.addEventListener('click', function() {
     // Load Weekly Wellness Summary
     generateWeeklyReport();
 });
+
+// Load team insights
+async function loadTeamInsights() {
+    try {
+        // Get user's current team
+        const userTeamResult = await ipcRenderer.invoke('get-user-team');
+        const teamInsightsContent = document.getElementById('teamInsightsContent');
+        
+        if (!userTeamResult.success || !userTeamResult.teamName) {
+            // Show team join interface
+            displayTeamJoinInterface(teamInsightsContent);
+            return;
+        }
+        
+        // User has a team, get team mood data
+        const teamMoodResult = await ipcRenderer.invoke('get-team-mood-data', userTeamResult.teamName);
+        
+        if (teamMoodResult.success && teamMoodResult.data.length > 0) {
+            // Display team insights
+            displayTeamInsights(teamInsightsContent, userTeamResult.teamName, teamMoodResult.data);
+        } else {
+            // Show team with no data
+            displayTeamNoData(teamInsightsContent, userTeamResult.teamName);
+        }
+        
+    } catch (error) {
+        console.error('Error loading team insights:', error);
+        document.getElementById('teamInsightsContent').innerHTML = '<p style="color: #ef4444;">Error loading team insights. Please try again.</p>';
+    }
+}
+
+// Display team join interface
+function displayTeamJoinInterface(container) {
+    container.innerHTML = `
+        <div class="team-join-container">
+            <p>👥 Join or create a team to see collaborative mood insights!</p>
+            <p>Teams help you understand collective mood patterns and support each other's wellbeing.</p>
+            <div class="team-join-form">
+                <input type="text" id="teamNameInput" class="team-join-input" placeholder="Enter team name" maxlength="50">
+                <button id="joinTeamBtn" class="team-join-btn">Join Team</button>
+            </div>
+        </div>
+    `;
+    
+    // Add event listeners
+    const teamNameInput = document.getElementById('teamNameInput');
+    const joinTeamBtn = document.getElementById('joinTeamBtn');
+    
+    joinTeamBtn.addEventListener('click', handleJoinTeam);
+    teamNameInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            handleJoinTeam();
+        }
+    });
+}
+
+// Handle joining a team
+async function handleJoinTeam() {
+    const teamNameInput = document.getElementById('teamNameInput');
+    const teamName = teamNameInput.value.trim();
+    
+    if (!teamName) {
+        alert('Please enter a team name');
+        return;
+    }
+    
+    try {
+        const result = await ipcRenderer.invoke('save-user-team', teamName);
+        
+        if (result.success) {
+            console.log('✅ Successfully joined team:', teamName);
+            // Reload team insights
+            loadTeamInsights();
+        } else {
+            alert('Failed to join team. Please try again.');
+        }
+    } catch (error) {
+        console.error('Error joining team:', error);
+        alert('Error joining team. Please try again.');
+    }
+}
+
+// Display team insights
+function displayTeamInsights(container, teamName, teamData) {
+    const stats = calculateTeamStats(teamData);
+    
+    container.innerHTML = `
+        <div class="team-current-team">
+            🏆 Team: ${teamName}
+            <button class="team-leave-btn" onclick="handleLeaveTeam()">Leave Team</button>
+        </div>
+        
+        <div class="team-insights-grid">
+            <div class="team-stat-card">
+                <div class="team-stat-icon">👥</div>
+                <div class="team-stat-value">${stats.totalMembers}</div>
+                <div class="team-stat-label">Active Members</div>
+            </div>
+            
+            <div class="team-stat-card">
+                <div class="team-stat-icon">📊</div>
+                <div class="team-stat-value">${stats.totalEntries}</div>
+                <div class="team-stat-label">Total Entries</div>
+            </div>
+            
+            <div class="team-stat-card">
+                <div class="team-stat-icon">📈</div>
+                <div class="team-stat-value">${stats.avgEntriesPerUser}</div>
+                <div class="team-stat-label">Avg per Member</div>
+            </div>
+            
+            <div class="team-stat-card">
+                <div class="team-stat-icon">${stats.mostCommonMood.emoji}</div>
+                <div class="team-stat-value">${stats.mostCommonMood.name}</div>
+                <div class="team-stat-label">Most Common Mood</div>
+            </div>
+        </div>
+        
+        <div class="team-mood-breakdown">
+            ${stats.moodBreakdown.map(mood => `
+                <div class="team-mood-item">
+                    <div class="team-mood-emoji">${mood.emoji}</div>
+                    <div class="team-mood-name">${mood.name}</div>
+                    <div class="team-mood-count">${mood.count}</div>
+                </div>
+            `).join('')}
+        </div>
+        
+        <div style="margin-top: 20px; padding: 16px; background: rgba(78, 205, 196, 0.1); border-radius: 12px; border: 1px solid rgba(78, 205, 196, 0.2);">
+            <p style="color: #4ecdc4; font-size: 14px; margin: 0; text-align: center;">
+                🔒 Privacy: Individual usernames and specific mood details are not shared - only aggregated team statistics.
+            </p>
+        </div>
+    `;
+}
+
+// Display team with no data
+function displayTeamNoData(container, teamName) {
+    container.innerHTML = `
+        <div class="team-current-team">
+            🏆 Team: ${teamName}
+            <button class="team-leave-btn" onclick="handleLeaveTeam()">Leave Team</button>
+        </div>
+        
+        <div class="team-join-container">
+            <p>👥 You're part of team "${teamName}"!</p>
+            <p>No team mood data available yet. Start tracking moods and encourage your team members to join!</p>
+            <div style="margin-top: 20px; padding: 16px; background: rgba(78, 205, 196, 0.1); border-radius: 12px; border: 1px solid rgba(78, 205, 196, 0.2);">
+                <p style="color: #4ecdc4; font-size: 14px; margin: 0; text-align: center;">
+                    💡 Share your team name "${teamName}" with your colleagues to get started!
+                </p>
+            </div>
+        </div>
+    `;
+}
+
+// Calculate team statistics
+function calculateTeamStats(teamData) {
+    const uniqueMembers = new Set(teamData.map(entry => entry.userId)).size;
+    const totalEntries = teamData.length;
+    const avgEntriesPerUser = Math.round(totalEntries / uniqueMembers);
+    
+    // Calculate mood frequencies
+    const moodCounts = {};
+    teamData.forEach(entry => {
+        const moodName = entry.mood.split(' ')[1] || 'Unknown';
+        moodCounts[moodName] = (moodCounts[moodName] || 0) + 1;
+    });
+    
+    // Find most common mood
+    let mostCommonMood = { name: 'Unknown', count: 0, emoji: '😐' };
+    for (const [mood, count] of Object.entries(moodCounts)) {
+        if (count > mostCommonMood.count) {
+            mostCommonMood = { 
+                name: mood, 
+                count: count,
+                emoji: getMoodEmoji(`😊 ${mood}`)
+            };
+        }
+    }
+    
+    // Create mood breakdown (top 6 moods)
+    const moodBreakdown = Object.entries(moodCounts)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 6)
+        .map(([mood, count]) => ({
+            name: mood,
+            count: count,
+            emoji: getMoodEmoji(`😊 ${mood}`)
+        }));
+    
+    return {
+        totalMembers: uniqueMembers,
+        totalEntries: totalEntries,
+        avgEntriesPerUser: avgEntriesPerUser,
+        mostCommonMood: mostCommonMood,
+        moodBreakdown: moodBreakdown
+    };
+}
+
+// Handle leaving a team
+async function handleLeaveTeam() {
+    if (!confirm('Are you sure you want to leave your team? You can always join again later.')) {
+        return;
+    }
+    
+    try {
+        const result = await ipcRenderer.invoke('save-user-team', null);
+        
+        if (result.success) {
+            console.log('✅ Successfully left team');
+            // Reload team insights
+            loadTeamInsights();
+        } else {
+            alert('Failed to leave team. Please try again.');
+        }
+    } catch (error) {
+        console.error('Error leaving team:', error);
+        alert('Error leaving team. Please try again.');
+    }
+}
+
+// Make handleLeaveTeam globally accessible
+window.handleLeaveTeam = handleLeaveTeam;
 
  
