@@ -2,7 +2,7 @@
   {
     "id": "rule_1751516272230_1b8e6rqll",
     "originalText": "When I'm sad, send me motivational quotes",
-    "mood": "happy",
+    "mood": "sad",
     "action": "Send me motivational quotes",
     "time": "now",
     "actionType": "send_message",
@@ -21,6 +21,30 @@
     "content": "appy, send happy quotes",
     "music": "appy, send happy quotes",
     "createdAt": "2025-07-03T20:19:51.648Z",
+    "isActive": true
+  },
+  {
+    "id": "rule_1751583315665_e3vcqb25j",
+    "originalText": "when i'm happy, send me a good song",
+    "mood": "happy",
+    "action": "Send me a good song",
+    "time": "now",
+    "actionType": "send_message",
+    "content": "a good song",
+    "createdAt": "2025-07-03T22:55:15.665Z",
+    "isActive": true
+  },
+  {
+    "id": "rule_1751584346253_p47qyo9c4",
+    "originalText": "when i am happy, send a good song",
+    "mood": "happy",
+    "action": "appy, send a good song",
+    "time": "now",
+    "actionType": "send_message",
+    "activity": "appy, send a good song",
+    "content": "appy, send a good song",
+    "music": "appy, send a good song",
+    "createdAt": "2025-07-03T23:12:26.253Z",
     "isActive": true
   }
 ]

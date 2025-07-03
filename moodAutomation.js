@@ -223,9 +223,17 @@ function parseMoodTrigger(moodText) {
         return moodMappings[cleanMood];
     }
     
-    // Try partial matching for compound phrases
+    // Try partial matching for compound phrases (but be more careful about order)
+    // First try exact word matches
     for (const [phrase, mood] of Object.entries(moodMappings)) {
-        if (cleanMood.includes(phrase) || phrase.includes(cleanMood)) {
+        if (cleanMood === phrase) {
+            return mood;
+        }
+    }
+    
+    // Then try partial matches (but avoid short matches that could be misleading)
+    for (const [phrase, mood] of Object.entries(moodMappings)) {
+        if (phrase.length >= 3 && (cleanMood.includes(phrase) || phrase.includes(cleanMood))) {
             return mood;
         }
     }
