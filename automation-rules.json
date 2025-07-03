@@ -9,5 +9,18 @@
     "content": "motivational quotes",
     "createdAt": "2025-07-03T04:17:52.230Z",
     "isActive": true
+  },
+  {
+    "id": "rule_1751573991648_t6edo83gw",
+    "originalText": "when i'm happy, send happy quotes",
+    "mood": "happy",
+    "action": "appy, send happy quotes",
+    "time": "now",
+    "actionType": "send_message",
+    "activity": "appy, send happy quotes",
+    "content": "appy, send happy quotes",
+    "music": "appy, send happy quotes",
+    "createdAt": "2025-07-03T20:19:51.648Z",
+    "isActive": true
   }
 ]
